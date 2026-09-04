@@ -1,0 +1,679 @@
+:root {
+  font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  color: #25231f;
+  background: #f3efe6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.app-shell {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid rgba(147, 75, 51, 0.28);
+  outline-offset: 3px;
+}
+
+.bookshelf-page {
+  position: relative;
+  height: 100%;
+  overflow: auto;
+  padding: 52px clamp(40px, 7vw, 98px) 34px;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(175, 130, 78, 0.1), transparent 28%),
+    linear-gradient(180deg, #f7f3eb 0%, #f1ece2 100%);
+}
+
+.bookshelf-page::before {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  content: "";
+  background: #934b33;
+}
+
+.bookshelf-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  gap: 36px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 4px 9px 9px 4px;
+  color: #fffaf2;
+  background: #934b33;
+  box-shadow: inset 4px 0 0 rgba(48, 22, 14, 0.22);
+  font-family: SimSun, serif;
+  font-size: 16px;
+}
+
+.eyebrow {
+  color: #786f62;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.bookshelf-header h1 {
+  margin: 0;
+  font-family: STSong, SimSun, "Songti SC", serif;
+  font-size: clamp(36px, 4vw, 52px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.page-subtitle {
+  margin: 13px 0 0;
+  color: #716a60;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 21px;
+  color: #fffaf3;
+  background: #934b33;
+  box-shadow: 0 9px 24px rgba(90, 46, 30, 0.2);
+  font-weight: 650;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #7f3e2a;
+  box-shadow: 0 12px 28px rgba(90, 46, 30, 0.27);
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+.button-plus {
+  margin-right: 8px;
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.bookshelf-rule {
+  width: min(1120px, 100%);
+  height: 1px;
+  margin: 37px auto 31px;
+  background: rgba(69, 57, 45, 0.14);
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(315px, 1fr));
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  gap: 18px;
+}
+
+.book-card {
+  position: relative;
+  display: flex;
+  min-height: 182px;
+  overflow: hidden;
+  border: 1px solid rgba(76, 64, 49, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.86);
+  box-shadow: 0 8px 24px rgba(53, 43, 31, 0.055);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.book-card:hover {
+  border-color: rgba(147, 75, 51, 0.32);
+  box-shadow: 0 14px 32px rgba(53, 43, 31, 0.1);
+  transform: translateY(-2px);
+}
+
+.book-open-button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.book-open-button:focus-visible {
+  outline-offset: -4px;
+}
+
+.book-spine {
+  position: relative;
+  display: grid;
+  flex: 0 0 88px;
+  margin: 17px 0 17px 17px;
+  place-items: center;
+  border-radius: 4px 9px 9px 4px;
+  color: rgba(255, 250, 241, 0.94);
+  background:
+    linear-gradient(90deg, rgba(39, 20, 13, 0.28) 0 6px, transparent 6px),
+    linear-gradient(145deg, #9b543b, #733622);
+  box-shadow: 4px 7px 13px rgba(77, 38, 24, 0.2);
+}
+
+.book-spine::after {
+  position: absolute;
+  top: 16px;
+  right: 13px;
+  bottom: 16px;
+  left: 18px;
+  border: 1px solid rgba(255, 242, 219, 0.35);
+  content: "";
+}
+
+.book-spine span {
+  z-index: 1;
+  font-family: STSong, SimSun, serif;
+  font-size: 29px;
+}
+
+.book-details {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  padding: 24px 21px 21px 19px;
+}
+
+.book-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-right: 30px;
+}
+
+.book-heading h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  font-family: STSong, SimSun, "Songti SC", serif;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.icon-button {
+  border: 0;
+  cursor: pointer;
+}
+
+.remove-button {
+  position: absolute;
+  z-index: 2;
+  top: 23px;
+  right: 19px;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border-radius: 50%;
+  color: #8a8175;
+  background: transparent;
+  font-size: 20px;
+  line-height: 22px;
+}
+
+.remove-button:hover {
+  color: #7f3e2a;
+  background: #f0e6dc;
+}
+
+.book-meta {
+  margin: 7px 0 auto;
+  color: #888073;
+  font-size: 12px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  margin-top: 22px;
+  border-radius: 4px;
+  background: #e3ddd3;
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #a75b40;
+}
+
+.book-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 9px;
+}
+
+.book-progress-row strong {
+  color: #655c50;
+  font-size: 12px;
+}
+
+.book-progress-row span {
+  color: #934b33;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.book-card-skeleton {
+  background: linear-gradient(100deg, #eae4da 20%, #f6f2eb 36%, #eae4da 52%);
+  background-size: 300% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  to { background-position-x: -150%; }
+}
+
+.empty-shelf {
+  display: flex;
+  width: min(1120px, 100%);
+  min-height: 390px;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border: 1px dashed rgba(104, 86, 65, 0.2);
+  border-radius: 13px;
+  background: rgba(255, 253, 249, 0.4);
+}
+
+.empty-books {
+  display: flex;
+  height: 80px;
+  align-items: flex-end;
+  gap: 5px;
+  opacity: 0.66;
+}
+
+.empty-books span {
+  display: block;
+  width: 25px;
+  height: 62px;
+  border: 2px solid #9a7660;
+  border-radius: 3px 5px 5px 3px;
+}
+
+.empty-books span:nth-child(2) {
+  height: 72px;
+  background: rgba(147, 75, 51, 0.09);
+}
+
+.empty-books span:nth-child(3) {
+  height: 58px;
+  transform: rotate(8deg);
+  transform-origin: bottom;
+}
+
+.empty-shelf h2 {
+  margin: 20px 0 5px;
+  font-family: STSong, SimSun, serif;
+  font-size: 23px;
+}
+
+.empty-shelf p {
+  margin: 0 0 22px;
+  color: #7d756a;
+  font-size: 14px;
+}
+
+.secondary-button {
+  min-width: 148px;
+  padding: 0 18px;
+  border: 1px solid rgba(147, 75, 51, 0.42);
+  color: #843f2b;
+  background: rgba(255, 252, 246, 0.72);
+  font-weight: 650;
+}
+
+.secondary-button:hover {
+  background: #fffaf2;
+  transform: translateY(-1px);
+}
+
+.privacy-note {
+  margin-top: 16px;
+  color: #999184;
+  font-size: 11px;
+}
+
+.bookshelf-footer {
+  display: flex;
+  justify-content: space-between;
+  width: min(1120px, 100%);
+  margin: 32px auto 0;
+  color: #989083;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.toast {
+  position: fixed;
+  z-index: 50;
+  right: 26px;
+  bottom: 24px;
+  display: flex;
+  max-width: min(410px, calc(100vw - 52px));
+  min-height: 48px;
+  padding: 13px 14px;
+  align-items: center;
+  border: 1px solid rgba(69, 57, 45, 0.14);
+  border-radius: 9px;
+  color: #3c3933;
+  background: rgba(255, 253, 248, 0.97);
+  box-shadow: 0 14px 42px rgba(49, 39, 28, 0.18);
+  font-size: 13px;
+}
+
+.toast-dot {
+  width: 7px;
+  height: 7px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: #a45639;
+}
+
+.toast-close {
+  margin-left: 16px;
+  border: 0;
+  color: #8a8175;
+  background: transparent;
+  cursor: pointer;
+  font-size: 19px;
+}
+
+.reader-page {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  background: #f5f0e6;
+}
+
+.reader-toolbar {
+  z-index: 5;
+  display: grid;
+  min-height: 72px;
+  padding: 0 26px;
+  align-items: center;
+  grid-template-columns: 1fr minmax(220px, 2fr) 1fr;
+  border-bottom: 1px solid rgba(80, 66, 50, 0.1);
+  background: rgba(249, 246, 239, 0.97);
+}
+
+.back-button {
+  width: fit-content;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 7px;
+  color: #6d6459;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.back-button:hover {
+  color: #7f3e2a;
+  background: #eee6dc;
+}
+
+.back-button span {
+  margin-right: 5px;
+  font-size: 17px;
+}
+
+.reader-title-block {
+  min-width: 0;
+  text-align: center;
+}
+
+.reader-title-block h1 {
+  overflow: hidden;
+  margin: 0;
+  font-family: STSong, SimSun, serif;
+  font-size: 16px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-title-block span {
+  display: block;
+  margin-top: 4px;
+  color: #968e82;
+  font-size: 10px;
+}
+
+.font-controls {
+  display: flex;
+  justify-self: end;
+  overflow: hidden;
+  border: 1px solid rgba(89, 75, 60, 0.16);
+  border-radius: 7px;
+}
+
+.font-controls button {
+  width: 38px;
+  height: 32px;
+  border: 0;
+  border-right: 1px solid rgba(89, 75, 60, 0.12);
+  color: #81786c;
+  background: transparent;
+  cursor: pointer;
+  font-family: STSong, SimSun, serif;
+  font-size: 12px;
+}
+
+.font-controls button:last-child {
+  border-right: 0;
+}
+
+.font-controls button:hover,
+.font-controls button.active {
+  color: #7f3e2a;
+  background: #ede2d7;
+}
+
+.font-controls button.active {
+  font-weight: 700;
+}
+
+.reader-progress-line {
+  z-index: 6;
+  height: 2px;
+  flex: 0 0 2px;
+  background: rgba(89, 75, 60, 0.08);
+}
+
+.reader-progress-line span {
+  display: block;
+  height: 100%;
+  background: #a55438;
+  transition: width 180ms linear;
+}
+
+.reading-scroller {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  scrollbar-color: rgba(117, 94, 71, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.reading-scroller::before {
+  position: fixed;
+  top: 74px;
+  right: 0;
+  left: 0;
+  height: 45px;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(#f5f0e6, rgba(245, 240, 230, 0));
+}
+
+.reading-column {
+  position: relative;
+  width: min(740px, calc(100% - 92px));
+  margin: 58px auto 0;
+}
+
+.text-chunk {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 26px;
+  color: #34312c;
+  font-family: STSong, SimSun, "Songti SC", "Microsoft YaHei UI", serif;
+  font-weight: 400;
+  letter-spacing: 0.055em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.font-small .text-chunk {
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.font-medium .text-chunk {
+  font-size: 19px;
+  line-height: 1.95;
+}
+
+.font-large .text-chunk {
+  font-size: 22px;
+  line-height: 2;
+}
+
+.reader-end {
+  width: min(740px, calc(100% - 92px));
+  margin: 45px auto 80px;
+  color: #a49c91;
+  font-family: STSong, SimSun, serif;
+  font-size: 12px;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+
+.reader-loading {
+  align-items: center;
+  justify-content: center;
+  color: #8b8175;
+}
+
+.reader-loading-mark {
+  display: grid;
+  width: 54px;
+  height: 64px;
+  place-items: center;
+  border-radius: 5px 12px 12px 5px;
+  color: #fff8ee;
+  background: #934b33;
+  box-shadow: inset 6px 0 0 rgba(41, 20, 12, 0.2), 0 12px 24px rgba(80, 42, 29, 0.2);
+  font-family: STSong, SimSun, serif;
+  font-size: 23px;
+}
+
+.reader-loading p {
+  margin-top: 19px;
+  font-size: 13px;
+}
+
+@media (max-width: 780px) {
+  .bookshelf-page {
+    padding: 34px 28px 25px;
+  }
+
+  .bookshelf-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .import-button {
+    width: 100%;
+  }
+
+  .book-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reader-toolbar {
+    padding: 0 13px;
+    grid-template-columns: 92px minmax(120px, 1fr) 126px;
+  }
+
+  .reading-column,
+  .reader-end {
+    width: calc(100% - 48px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
