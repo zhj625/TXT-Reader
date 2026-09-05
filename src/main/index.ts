@@ -1,9 +1,13 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
+import squirrelStartup from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc';
 import { ImportService } from './services/importService';
+import { handleSquirrelStartup } from './squirrelStartup';
 import { LibraryRepository } from './storage/libraryRepository';
+
+const squirrelStartupHandled = handleSquirrelStartup(squirrelStartup, () => app.quit());
 
 if (process.env.READER_E2E === '1' && process.env.READER_E2E_USER_DATA) {
   app.setPath('userData', path.resolve(process.env.READER_E2E_USER_DATA));
@@ -102,33 +106,35 @@ async function bootstrap(): Promise<void> {
   });
 }
 
-void app.whenReady().then(async () => {
-  Menu.setApplicationMenu(null);
-  try {
-    await bootstrap();
-  } catch (error) {
-    console.error('Application startup failed', error);
-    dialog.showErrorBox('无法启动墨读', '本地书库无法初始化，请检查磁盘空间或文件权限。');
-    app.quit();
-  }
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0 && repository) {
-      mainWindow = createMainWindow();
+if (!squirrelStartupHandled) {
+  void app.whenReady().then(async () => {
+    Menu.setApplicationMenu(null);
+    try {
+      await bootstrap();
+    } catch (error) {
+      console.error('Application startup failed', error);
+      dialog.showErrorBox('无法启动墨读', '本地书库无法初始化，请检查磁盘空间或文件权限。');
+      app.quit();
     }
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0 && repository) {
+        mainWindow = createMainWindow();
+      }
+    });
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
 
-app.on('before-quit', (event) => {
-  if (quittingAfterFlush || !repository) return;
-  event.preventDefault();
-  quittingAfterFlush = true;
-  void repository
-    .flush()
-    .catch((error) => console.error('Failed to flush library before quit', error))
-    .finally(() => app.exit(0));
-});
+  app.on('before-quit', (event) => {
+    if (quittingAfterFlush || !repository) return;
+    event.preventDefault();
+    quittingAfterFlush = true;
+    void repository
+      .flush()
+      .catch((error) => console.error('Failed to flush library before quit', error))
+      .finally(() => app.exit(0));
+  });
+}

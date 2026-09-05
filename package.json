@@ -1,7 +1,7 @@
 {
   "name": "moodu-txt-reader",
   "productName": "TXT Reader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A simple, offline-first desktop TXT reader",
   "author": "TXT Reader Contributors",
   "type": "module",
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "3.14.10",
+    "electron-squirrel-startup": "1.0.1",
     "iconv-lite": "0.7.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
