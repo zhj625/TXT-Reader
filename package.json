@@ -13,10 +13,10 @@
     "make": "pwsh -NoProfile -File scripts/make-windows.ps1",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run --config config/vitest.config.ts",
+    "test:watch": "vitest --config config/vitest.config.ts",
     "test:docs": "pwsh -NoProfile -File tests/validate-product-design.ps1 && pwsh -NoProfile -File tests/validate-technical-design.ps1",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config config/playwright.config.ts",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run test:docs && npm run package",
     "verify:full": "npm run verify && npm run test:e2e"
   },

@@ -12,7 +12,7 @@ const config: ForgeConfig = {
     appBundleId: 'local.moodu.txtreader',
     icon: undefined,
     ignore: [
-      /^\/(?:coverage|docs|out|playwright-report|scripts|test-results|tests)(?:\/|$)/,
+      /^\/(?:config|coverage|docs|out|playwright-report|scripts|test-results|tests)(?:\/|$)/,
       /^\/(?:\.gitignore|AGENTS\.md|PRODUCT_DESIGN\.md|README\.md|eslint\.config\.mjs|forge\.config\.ts|index\.html|package-lock\.json|playwright\.config\.ts|tsconfig\.json|vite\..+\.config\.ts|vitest\.config\.ts)$/,
       /^\/node_modules\/\.vite(?:\/|$)/,
       /^\/src(?:\/|$)/,
@@ -31,19 +31,19 @@ const config: ForgeConfig = {
       build: [
         {
           entry: 'src/main/index.ts',
-          config: 'vite.main.config.ts',
+          config: 'config/vite.main.config.ts',
           target: 'main',
         },
         {
           entry: 'src/preload/index.ts',
-          config: 'vite.preload.config.ts',
+          config: 'config/vite.preload.config.ts',
           target: 'preload',
         },
       ],
       renderer: [
         {
           name: 'main_window',
-          config: 'vite.renderer.config.ts',
+          config: 'config/vite.renderer.config.ts',
         },
       ],
     }),

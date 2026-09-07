@@ -3,7 +3,7 @@
 - 方案版本：v0.1
 - 产品阶段：MVP
 - 更新日期：2026-09-03
-- 依据文档：[TXT 电子阅读器 MVP 产品设计文档](../PRODUCT_DESIGN.md)
+- 依据文档：[TXT 电子阅读器 MVP 产品设计文档](./PRODUCT_DESIGN.md)
 
 ## 1. 方案结论
 

@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$documentPath = Join-Path $repositoryRoot 'PRODUCT_DESIGN.md'
+$documentPath = Join-Path $repositoryRoot 'docs/PRODUCT_DESIGN.md'
 
 if (-not (Test-Path -LiteralPath $documentPath -PathType Leaf)) {
     throw "Product design document is missing: $documentPath"

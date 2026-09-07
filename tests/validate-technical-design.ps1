@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $documentPath = Join-Path $repositoryRoot 'docs\TECHNICAL_DESIGN.md'
-$productDocumentPath = Join-Path $repositoryRoot 'PRODUCT_DESIGN.md'
+$productDocumentPath = Join-Path $repositoryRoot 'docs/PRODUCT_DESIGN.md'
 
 if (-not (Test-Path -LiteralPath $documentPath -PathType Leaf)) {
     throw "Technical design document is missing: $documentPath"
@@ -20,7 +20,7 @@ $requiredPatterns = @(
     '(?m)^## 5\. 本地数据设计$',
     '(?m)^## 8\. 安全边界$',
     '(?m)^## 9\. 测试与验证$',
-    '\.\./PRODUCT_DESIGN\.md',
+    '\]\(\./PRODUCT_DESIGN\.md\)',
     'Electron',
     'TypeScript',
     'React',

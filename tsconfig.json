@@ -19,9 +19,7 @@
   },
   "include": [
     "forge.config.ts",
-    "vite.*.config.ts",
-    "vitest.config.ts",
-    "playwright.config.ts",
+    "config/**/*.ts",
     "src",
     "tests/**/*.ts",
     "tests/**/*.tsx"
