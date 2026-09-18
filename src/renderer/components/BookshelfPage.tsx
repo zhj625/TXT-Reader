@@ -77,7 +77,7 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
   };
 
   const handleRemove = async (book: BookSummary) => {
-    const confirmed = window.confirm(`从书架移除《${book.title}》？\n\n原始 TXT 文件不会被删除。`);
+    const confirmed = window.confirm(`从书架移除《${book.title}》？\n\n原始书籍文件不会被删除。`);
     if (!confirmed) return;
 
     setRemovingId(book.id);
@@ -98,7 +98,7 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
         <div>
           <div className="brand-row">
             <span className="brand-mark" aria-hidden="true">墨</span>
-            <span className="eyebrow">本地 TXT 阅读器</span>
+            <span className="eyebrow">本地电子书阅读器</span>
           </div>
           <h1>我的书架</h1>
           <p className="page-subtitle">让文字留在本机，也让每次阅读从上次停下的地方继续。</p>
@@ -111,7 +111,7 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
           data-testid="import-book"
         >
           <span className="button-plus" aria-hidden="true">＋</span>
-          {importing ? '正在导入…' : '导入 TXT'}
+          {importing ? '正在导入…' : '导入 TXT / EPUB'}
         </button>
       </header>
 
@@ -129,9 +129,9 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
             <span />
           </div>
           <h2>书架还是空的</h2>
-          <p>导入一本 TXT，从第一页开始。</p>
+          <p>导入一本 TXT 或 EPUB，从第一页开始。</p>
           <button className="secondary-button" type="button" onClick={handleImport} disabled={importing}>
-            选择本地 TXT
+            选择本地 TXT / EPUB
           </button>
           <span className="privacy-note">文件与阅读记录只保存在这台电脑上</span>
         </section>

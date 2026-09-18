@@ -2,6 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import iconv from 'iconv-lite';
+import { epubFiles, expectedEpubText, zipFiles } from '../fixtures/epub';
 import { ImportService } from '../../src/main/services/importService';
 import { LibraryRepository } from '../../src/main/storage/libraryRepository';
 
@@ -16,6 +17,46 @@ describe('ImportService', () => {
 
   afterEach(async () => {
     await rm(testPath, { recursive: true, force: true });
+  });
+
+  it('imports EPUB, detects duplicates, restores progress and keeps an independent copy', async () => {
+    const sourcePath = path.join(testPath, 'original.EPUB');
+    await writeFile(sourcePath, zipFiles(epubFiles()));
+    const repository = new LibraryRepository(userDataPath);
+    await repository.initialize();
+    const service = new ImportService(repository, {pickFile: async () => sourcePath});
+    const result = await service.importBook();
+    expect(result.status).toBe('success');
+    if (result.status !== 'success') throw Error('Import failed');
+    expect(result.book.title).toBe('山河 & 故人');
+    expect(await service.importBook()).toMatchObject({status:'duplicate', bookId:result.book.id});
+    repository.saveProgress(result.book.id, 10);
+    await repository.flush();
+    await rm(sourcePath);
+    const reopened = new LibraryRepository(userDataPath);
+    await reopened.initialize();
+    expect(await reopened.loadBook(result.book.id)).toMatchObject({content:expectedEpubText, progress:{charOffset:10}});
+  });
+
+  it('falls back to the filename when EPUB metadata has no title', async () => {
+    const files = epubFiles();
+    files['OPS/book.opf'] = files['OPS/book.opf'].replace('<dc:title>山河 &amp; 故人</dc:title>', '');
+    const sourcePath = path.join(testPath, '备用书名.epub');
+    await writeFile(sourcePath, zipFiles(files));
+    const repository = new LibraryRepository(userDataPath);
+    await repository.initialize();
+    expect(await new ImportService(repository, {pickFile:async () => sourcePath}).importBook())
+      .toMatchObject({status:'success', book:{title:'备用书名'}});
+  });
+
+  it('returns an EPUB error without changing the library', async () => {
+    const sourcePath = path.join(testPath, 'broken.epub');
+    await writeFile(sourcePath, 'broken');
+    const repository = new LibraryRepository(userDataPath);
+    await repository.initialize();
+    expect(await new ImportService(repository, {pickFile:async () => sourcePath}).importBook())
+      .toMatchObject({status:'error', code:'INVALID_EPUB'});
+    expect(repository.listBooks()).toEqual([]);
   });
 
   it('imports a GB18030 file, creates an internal UTF-8 copy and detects duplicates', async () => {

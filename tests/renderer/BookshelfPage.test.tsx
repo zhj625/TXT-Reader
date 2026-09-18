@@ -38,6 +38,8 @@ describe('BookshelfPage', () => {
     render(<BookshelfPage onOpen={onOpen} onNotice={vi.fn()} />);
 
     expect(await screen.findByTestId('empty-shelf')).toBeInTheDocument();
+    expect(screen.getByTestId('import-book')).toHaveTextContent('导入 TXT / EPUB');
+    expect(screen.getByRole('button', {name:'选择本地 TXT / EPUB'})).toBeInTheDocument();
     await user.click(screen.getByTestId('import-book'));
     expect(onOpen).toHaveBeenCalledWith(book.id);
   });

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron, expect, test, type ElectronApplication } from '@playwright/test';
 import iconv from 'iconv-lite';
+import { epubFiles, expectedEpubText, zipFiles } from '../fixtures/epub';
 
 async function launchApp(userDataPath: string, importPath?: string): Promise<ElectronApplication> {
   return electron.launch({
@@ -104,6 +105,41 @@ test.describe('TXT Reader desktop flow', () => {
     await expect(page.getByTestId('empty-shelf')).toBeVisible();
     expect(await readFile(originalPath, 'utf8')).toBe(content);
     await app.close();
+  });
+
+  test('imports EPUB from the shelf, reads chapters and reports duplicates', async () => {
+    const originalPath = path.join(testPath, '中文.epub');
+    await writeFile(originalPath, zipFiles(epubFiles()));
+    const app = await launchTrackedApp(path.join(testPath, 'epub-user-data'), originalPath);
+    const page = await app.firstWindow();
+    await expect(page.getByTestId('import-book')).toContainText('EPUB');
+    await page.getByTestId('import-book').click();
+    await expect(page.getByTestId('reader-page')).toBeVisible();
+    await expect(page.getByText('山河 & 故人', {exact:true})).toBeVisible();
+    const body = page.getByRole('article', {name:'山河 & 故人正文'});
+    await expect(body).toBeVisible();
+    await expect(body).toHaveText(expectedEpubText);
+    await page.getByRole('button', {name:/书架/}).click();
+    await page.getByTestId('import-book').click();
+    await expect(page.getByRole('status')).toContainText('已经在书架中了');
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', {name:'移除《山河 & 故人》'}).click();
+    await expect(page.getByTestId('empty-shelf')).toBeVisible();
+    expect(await readFile(originalPath)).toEqual(zipFiles(epubFiles()));
+    await app.close();
+  });
+
+  test('the packaged executable imports EPUB with bundled ZIP and XML dependencies', async () => {
+    const originalPath = path.join(testPath, 'packaged.epub');
+    const userDataPath = path.join(testPath, 'packaged-epub-data');
+    await writeFile(originalPath, zipFiles(epubFiles()));
+    expect(await runPackagedImportSmoke(userDataPath, originalPath)).toBe(0);
+    const library = JSON.parse(await readFile(path.join(userDataPath, 'library.json'), 'utf8')) as {
+      books: Array<{id:string; title:string}>;
+    };
+    expect(library.books).toHaveLength(1);
+    expect(library.books[0].title).toBe('山河 & 故人');
+    expect(await readFile(path.join(userDataPath, 'books', library.books[0].id + '.txt'), 'utf8')).toBe(expectedEpubText);
   });
 
   test('renders GB18030 Chinese text correctly', async () => {

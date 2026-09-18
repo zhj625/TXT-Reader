@@ -4,6 +4,7 @@ import type { BookRecord, ImportBookResult } from '../../shared/contracts';
 import { getErrorMessage, ReaderError, toReaderError } from '../../shared/errors';
 import type { LibraryRepository } from '../storage/libraryRepository';
 import { processTextBytesInWorker } from './textImportWorker';
+import { processEpubBytes } from './epubImport';
 
 export const DEFAULT_MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -31,19 +32,22 @@ export class ImportService {
       const selectedPath = await this.options.pickFile();
       if (!selectedPath) return { status: 'cancelled' };
 
-      if (path.extname(selectedPath).toLocaleLowerCase() !== '.txt') {
-        throw new ReaderError('UNSUPPORTED_OR_INVALID_TEXT', '首版只支持导入 .txt 文件。');
+      const extension = path.extname(selectedPath).toLowerCase();
+      if (!['.txt', '.epub'].includes(extension)) {
+        throw new ReaderError('UNSUPPORTED_OR_INVALID_TEXT', '目前支持导入 .txt 和 .epub 文件。');
       }
 
       const fileStat = await stat(selectedPath);
       if (!fileStat.isFile()) {
-        throw new ReaderError('UNSUPPORTED_OR_INVALID_TEXT', '选择的项目不是可读取的 TXT 文件。');
+        throw new ReaderError('UNSUPPORTED_OR_INVALID_TEXT', '选择的项目不是可读取的书籍文件。');
       }
       if (fileStat.size === 0) throw new ReaderError('EMPTY_FILE');
       if (fileStat.size > this.maxFileBytes) throw new ReaderError('FILE_TOO_LARGE');
 
       const bytes = await readFile(selectedPath);
-      const processed = await processTextBytesInWorker(bytes, this.options.iconvModulePath);
+      const processed = extension === '.epub'
+        ? await processEpubBytes(bytes)
+        : await processTextBytesInWorker(bytes, this.options.iconvModulePath);
       const existing = this.repository.getBookRecord(processed.id);
       if (existing) {
         return { status: 'duplicate', bookId: existing.id, title: existing.title };
@@ -51,7 +55,8 @@ export class ImportService {
 
       const importedAt = this.now().toISOString();
       const sourceFileName = path.basename(selectedPath);
-      const title = path.basename(sourceFileName, path.extname(sourceFileName)).trim() || sourceFileName;
+      const title = ('title' in processed && processed.title)
+        || path.basename(sourceFileName, path.extname(sourceFileName)).trim() || sourceFileName;
       const record: BookRecord = {
         id: processed.id,
         title,

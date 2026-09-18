@@ -30,16 +30,16 @@ function isAllowedNavigation(targetUrl: string): boolean {
   }
 }
 
-async function pickTxtFile(): Promise<string | null> {
+async function pickBookFile(): Promise<string | null> {
   if (process.env.READER_E2E === '1' && process.env.READER_E2E_IMPORT_PATH) {
     return path.resolve(process.env.READER_E2E_IMPORT_PATH);
   }
 
   const result = await dialog.showOpenDialog(mainWindow!, {
-    title: '导入 TXT',
+    title: '导入 TXT / EPUB',
     buttonLabel: '导入并阅读',
     properties: ['openFile'],
-    filters: [{ name: 'TXT 文本', extensions: ['txt'] }],
+    filters: [{ name: '电子书（TXT / EPUB）', extensions: ['txt', 'epub'] }],
   });
   return result.canceled ? null : (result.filePaths[0] ?? null);
 }
@@ -86,7 +86,7 @@ async function bootstrap(): Promise<void> {
 
   const runtimeRequire = createRequire(__filename);
   const importService = new ImportService(repository, {
-    pickFile: pickTxtFile,
+    pickFile: pickBookFile,
     iconvModulePath: runtimeRequire.resolve('iconv-lite'),
   });
 

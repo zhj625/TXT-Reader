@@ -38,6 +38,7 @@ export interface BookContent {
 }
 
 export type ReaderErrorCode =
+  | 'INVALID_EPUB'
   | 'EMPTY_FILE'
   | 'FILE_TOO_LARGE'
   | 'UNSUPPORTED_OR_INVALID_TEXT'

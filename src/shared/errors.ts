@@ -1,6 +1,7 @@
 import type { ReaderErrorCode } from './contracts';
 
 const ERROR_MESSAGES: Record<ReaderErrorCode, string> = {
+  INVALID_EPUB: '无法读取这个 EPUB，请确认文件完整、未加密且包含有效的文字章节。',
   EMPTY_FILE: '这个文件没有可阅读的文字。',
   FILE_TOO_LARGE: '文件超过 50 MiB，暂时无法导入。',
   UNSUPPORTED_OR_INVALID_TEXT: '无法识别这个 TXT 的文字编码，请确认文件内容有效。',
