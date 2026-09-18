@@ -119,6 +119,7 @@ test.describe('TXT Reader desktop flow', () => {
     const body = page.getByRole('article', {name:'山河 & 故人正文'});
     await expect(body).toBeVisible();
     await expect(body).toHaveText(expectedEpubText);
+    await expect(body.locator('.text-chunk').first()).toHaveCSS('color', 'rgb(23, 21, 18)');
     await page.getByRole('button', {name:/书架/}).click();
     await page.getByTestId('import-book').click();
     await expect(page.getByRole('status')).toContainText('已经在书架中了');
