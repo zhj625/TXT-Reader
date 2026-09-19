@@ -78,6 +78,7 @@ test.describe('TXT Reader desktop flow', () => {
     let page = await app.firstWindow();
 
     await expect(page.getByTestId('bookshelf-page')).toBeVisible();
+    await expect(page.getByTestId('update-status')).toContainText('安装版支持自动更新');
     await page.getByTestId('import-book').click();
     await expect(page.getByTestId('reader-page')).toBeVisible();
     await expect(page.getByText('山河入梦来，明月照归途。').first()).toBeVisible();

@@ -59,7 +59,15 @@ export interface SaveProgressInput {
   charOffset: number;
 }
 
+export interface UpdateState {
+  version: string;
+  status: 'disabled' | 'idle' | 'checking' | 'downloading' | 'downloaded' | 'up-to-date' | 'error';
+  message: string;
+}
+
 export interface ReaderDesktopApi {
+  getUpdateState(): Promise<UpdateState>;
+  checkForUpdates(): Promise<UpdateState>;
   listBooks(): Promise<BookSummary[]>;
   importBook(): Promise<ImportBookResult>;
   loadBook(bookId: string): Promise<BookContent>;
@@ -70,6 +78,8 @@ export interface ReaderDesktopApi {
 }
 
 export const IPC_CHANNELS = {
+  getUpdateState: 'updates:state',
+  checkForUpdates: 'updates:check',
   listBooks: 'books:list',
   importBook: 'books:import',
   loadBook: 'books:load',

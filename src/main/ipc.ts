@@ -2,6 +2,7 @@ import type { IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
 import type { FontSize, ReaderSettings, SaveProgressInput } from '../shared/contracts';
 import { IPC_CHANNELS } from '../shared/contracts';
 import { ReaderError, toReaderError } from '../shared/errors';
+import type { UpdateService } from './services/updateService';
 import type { ImportService } from './services/importService';
 import type { LibraryRepository } from './storage/libraryRepository';
 
@@ -48,6 +49,7 @@ interface RegisterIpcOptions {
   ipcMain: IpcMain;
   repository: LibraryRepository;
   importService: ImportService;
+  updateService: UpdateService;
   getTrustedWebContents: () => WebContents | null;
 }
 
@@ -55,6 +57,7 @@ export function registerIpcHandlers({
   ipcMain,
   repository,
   importService,
+  updateService,
   getTrustedWebContents,
 }: RegisterIpcOptions): void {
   const assertTrustedSender = (event: IpcMainInvokeEvent) => {
@@ -81,6 +84,8 @@ export function registerIpcHandlers({
     });
   };
 
+  handle(IPC_CHANNELS.getUpdateState, () => updateService.getState());
+  handle(IPC_CHANNELS.checkForUpdates, () => updateService.check());
   handle(IPC_CHANNELS.listBooks, () => repository.listBooks());
   handle(IPC_CHANNELS.importBook, () => importService.importBook());
   handle(IPC_CHANNELS.loadBook, (bookId: unknown) => repository.loadBook(validateBookId(bookId)));

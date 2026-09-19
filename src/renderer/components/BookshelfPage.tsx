@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { UpdateStatus } from './UpdateStatus';
 import type { BookSummary, ImportBookResult } from '../../shared/contracts';
 
 interface BookshelfPageProps {
@@ -183,7 +184,8 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
 
       <footer className="bookshelf-footer">
         <span>{books.length > 0 ? `${books.length} 本藏书` : '墨读'}</span>
-        <span>离线 · 本地保存</span>
+        <UpdateStatus />
+        <span>书籍与进度 · 本地保存</span>
       </footer>
     </main>
   );

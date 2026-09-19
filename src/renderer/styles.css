@@ -677,3 +677,32 @@ button:focus-visible,
     animation-iteration-count: 1 !important;
   }
 }
+
+.bookshelf-footer {
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+}
+
+.update-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: #655c50;
+  letter-spacing: normal;
+}
+
+.update-status button {
+  padding: 5px 8px;
+  border: 1px solid #b7a796;
+  border-radius: 5px;
+  background: transparent;
+  color: #7f3e2a;
+  cursor: pointer;
+}
+
+.update-status button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

@@ -1,8 +1,10 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
+import { app, autoUpdater, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './ipc';
+import { UpdateService } from './services/updateService';
 import { ImportService } from './services/importService';
 import { handleSquirrelStartup } from './squirrelStartup';
 import { LibraryRepository } from './storage/libraryRepository';
@@ -17,6 +19,7 @@ if (process.env.READER_E2E === '1' && process.env.READER_E2E_USER_DATA) {
 let mainWindow: BrowserWindow | null = null;
 let repository: LibraryRepository | null = null;
 let quittingAfterFlush = false;
+let updateService: UpdateService | null = null;
 
 function isAllowedNavigation(targetUrl: string): boolean {
   try {
@@ -97,11 +100,21 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
+  updateService = new UpdateService(autoUpdater, {
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    packaged: app.isPackaged,
+    installed: existsSync(path.resolve(path.dirname(process.execPath), '..', 'Update.exe')),
+    disabled: process.env.READER_E2E === '1',
+  });
+  updateService.start();
   mainWindow = createMainWindow();
   registerIpcHandlers({
     ipcMain,
     repository,
     importService,
+    updateService,
     getTrustedWebContents: () => mainWindow?.webContents ?? null,
   });
 }
@@ -135,6 +148,9 @@ if (!squirrelStartupHandled) {
     void repository
       .flush()
       .catch((error) => console.error('Failed to flush library before quit', error))
-      .finally(() => app.exit(0));
+      .finally(() => {
+        updateService?.dispose();
+        app.exit(0);
+      });
   });
 }

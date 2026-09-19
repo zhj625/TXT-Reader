@@ -12,7 +12,7 @@ const config: ForgeConfig = {
     appBundleId: 'local.moodu.txtreader',
     icon: undefined,
     ignore: [
-      /^\/(?:config|coverage|docs|out|playwright-report|scripts|test-results|tests)(?:\/|$)/,
+      /^\/(?:\.github|config|coverage|docs|out|playwright-report|scripts|test-results|tests)(?:\/|$)/,
       /^\/(?:\.gitignore|AGENTS\.md|PRODUCT_DESIGN\.md|README\.md|eslint\.config\.mjs|forge\.config\.ts|index\.html|package-lock\.json|playwright\.config\.ts|tsconfig\.json|vite\..+\.config\.ts|vitest\.config\.ts)$/,
       /^\/node_modules\/\.vite(?:\/|$)/,
       /^\/src(?:\/|$)/,

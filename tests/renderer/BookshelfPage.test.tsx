@@ -17,6 +17,8 @@ const book: BookSummary = {
 
 function mockApi(overrides: Partial<ReaderDesktopApi> = {}): ReaderDesktopApi {
   return {
+    getUpdateState: vi.fn().mockResolvedValue({version:'0.2.0', status:'disabled', message:'安装版支持自动更新'}),
+    checkForUpdates: vi.fn(),
     listBooks: vi.fn().mockResolvedValue([]),
     importBook: vi.fn().mockResolvedValue({ status: 'cancelled' }),
     loadBook: vi.fn(),
