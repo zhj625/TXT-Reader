@@ -61,8 +61,10 @@ v0.2.0 起支持自动更新。旧版需要先覆盖安装一次新版 TXT-Reade
 ### 发布新版
 
 1. 修改 package.json 和 package-lock.json 的版本号（例如 0.2.1），提交代码。
-2. 推送 main 和匹配版本的标签，例如 git tag v0.2.1 后 git push origin main v0.2.1。
-3. GitHub Actions 自动执行完整验证、打包和 RELEASES 的大小与哈希校验，再将安装器、完整 nupkg 和 RELEASES 上传至草稿 Release；全部成功后才公开发布。失败时不会发布不完整的更新。
+2. 推送 main：git push origin main。版本号变更会自动触发发布，无需另行推送标签。
+3. GitHub Actions 自动执行完整验证、打包和 RELEASES 的大小与哈希校验，再创建对应的版本标签，并将安装器、完整 nupkg 和 RELEASES 上传至草稿 Release；全部成功后才公开发布。失败时不会发布不完整的更新。
 4. 已安装的阅读器自动检查并下载新版本；可在书架点击“检查更新”。官方更新服务可能存在短暂缓存，发布后不会立即在所有客户端出现。
 
 不要覆盖已发布的版本；修复后递增版本号。手动发布也必须同时上传 out/make/squirrel.windows/x64 下的 TXT-Reader-Setup.exe、RELEASES 和对应版本的完整 nupkg，不能只上传安装器。自动更新依赖该仓库保持公开可访问。
+
+若推送后未开始发布，可在仓库 Actions → Release Windows → Run workflow 手动运行。已公开的版本不会重复发布；失败的草稿可重新运行完成上传。检查更新时，404 会提示“更新源尚未准备好”，连接失败才提示检查网络。

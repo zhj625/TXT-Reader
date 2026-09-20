@@ -2,8 +2,11 @@ name: Release Windows
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths:
+      - package.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,29 +24,48 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Validate stable release tag
+      - name: Validate stable release version
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          if ($version -notmatch '^\d+\.\d+\.\d+$' -or $env:GITHUB_REF_NAME -ne "v$version") {
-            throw 'Release tag must match the stable package.json version.'
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'Only a stable package.json version can be published.'
           }
-      - run: npm ci --registry=https://registry.npmjs.org
-      - run: npm run verify:full
-      - run: npm run make
-      - run: pwsh -NoProfile -File tests/validate-windows-release.ps1
-      - name: Upload complete update artifacts before publishing
+          "RELEASE_TAG=v$version" >> $env:GITHUB_ENV
+      - name: Check whether this version is already published
+        id: existing
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $tag = $env:GITHUB_REF_NAME
+          $existing = gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0 -and -not ($existing | ConvertFrom-Json).isDraft) {
+            'published=true' >> $env:GITHUB_OUTPUT
+          } else {
+            'published=false' >> $env:GITHUB_OUTPUT
+          }
+          exit 0
+      - if: steps.existing.outputs.published != 'true'
+        run: npm ci --registry=https://registry.npmjs.org
+      - if: steps.existing.outputs.published != 'true'
+        run: npm run verify:full
+      - if: steps.existing.outputs.published != 'true'
+        run: npx electron-forge make --skip-package
+      - if: steps.existing.outputs.published != 'true'
+        run: pwsh -NoProfile -File tests/validate-windows-release.ps1
+      - name: Upload complete update artifacts before publishing
+        if: steps.existing.outputs.published != 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:RELEASE_TAG
           $repo = $env:GITHUB_REPOSITORY
           $existing = gh release view $tag --repo $repo --json isDraft 2>$null
           if ($LASTEXITCODE -eq 0) {
             if (-not ($existing | ConvertFrom-Json).isDraft) { throw 'This version is already published. Bump the version instead.' }
           } else {
-            gh release create $tag --repo $repo --verify-tag --draft --title "墨读 $tag" --generate-notes
+            gh release create $tag --repo $repo --target $env:GITHUB_SHA --draft --title "墨读 $tag" --generate-notes
             if ($LASTEXITCODE -ne 0) { throw 'Could not create draft release.' }
           }
           $assets = @(Get-ChildItem out/make/squirrel.windows/x64 -File | Where-Object { $_.Name -eq 'RELEASES' -or $_.Name -eq 'TXT-Reader-Setup.exe' -or $_.Name -like '*-full.nupkg' } | ForEach-Object FullName)

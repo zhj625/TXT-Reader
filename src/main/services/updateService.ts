@@ -36,7 +36,16 @@ export class UpdateService {
   private readonly available = () => this.setState('downloading', '正在后台下载新版，可继续阅读');
   private readonly current = () => this.setState('up-to-date', '当前已是最新版本');
   private readonly downloaded = () => this.setState('downloaded', '新版已准备好，下次启动自动生效');
-  private readonly failed = () => this.setState('error', '暂时无法更新，请检查网络后重试');
+  private readonly failed = (error?: unknown) => {
+    const detail = error instanceof Error ? error.message : String(error ?? '');
+    const message = /\b404\b|not found/i.test(detail)
+      ? '更新源尚未准备好，请稍后重试'
+      : /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|network|offline|timed? ?out|无法连接|超时/i.test(detail)
+        ? '无法连接更新服务，请检查网络后重试'
+        : '检查更新失败，请稍后重试';
+    console.error('Update check failed', detail);
+    this.setState('error', message);
+  };
 
   private setState(status: UpdateState['status'], message: string): void {
     this.state = { ...this.state, status, message };
@@ -74,8 +83,8 @@ export class UpdateService {
         url: 'https://update.electronjs.org/' + UPDATE_REPOSITORY + '/win32-x64/' + encodeURIComponent(this.options.version),
       });
       this.updater.checkForUpdates();
-    } catch {
-      this.failed();
+    } catch (error) {
+      this.failed(error);
     }
     return this.getState();
   }

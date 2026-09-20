@@ -72,6 +72,20 @@ describe('automatic updates', () => {
     service.dispose();
   });
 
+  it.each([
+    ['Response status 404 (Not Found)', '更新源尚未准备好，请稍后重试'],
+    ['ETIMEDOUT while connecting', '无法连接更新服务，请检查网络后重试'],
+    ['Unexpected updater failure', '检查更新失败，请稍后重试'],
+  ])('reports the actual failure category for %s', (detail, message) => {
+    const { updater, service } = createService();
+    service.start();
+    vi.advanceTimersByTime(INITIAL_CHECK_DELAY_MS);
+    updater.emit('error', new Error(detail));
+    expect(service.getState()).toMatchObject({status:'error', message});
+    expect(service.check().status).toBe('checking');
+    service.dispose();
+  });
+
   it('handles synchronous updater failures and permits a later retry', () => {
     const { updater, service } = createService();
     updater.setFeedURL.mockImplementationOnce(() => { throw Error('feed unavailable'); });
