@@ -8,6 +8,8 @@ if (-not (Test-Path -LiteralPath $documentPath -PathType Leaf)) {
 }
 
 $content = Get-Content -LiteralPath $documentPath -Raw -Encoding UTF8
+# Normalize Windows checkouts before applying multiline heading expressions.
+$content = $content -replace "`r`n?", "`n"
 $requiredPatterns = @(
     '(?m)^# TXT .+ MVP .+$',
     '(?m)^## 1\.',
