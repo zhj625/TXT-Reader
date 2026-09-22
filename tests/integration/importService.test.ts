@@ -29,6 +29,8 @@ describe('ImportService', () => {
     expect(result.status).toBe('success');
     if (result.status !== 'success') throw Error('Import failed');
     expect(result.book.title).toBe('山河 & 故人');
+    expect(result.book.author).toBe('汤姆 · 霍加德');
+    expect(result.book.chapters).toHaveLength(2);
     expect(await service.importBook()).toMatchObject({status:'duplicate', bookId:result.book.id});
     repository.saveProgress(result.book.id, 10);
     await repository.flush();
@@ -73,6 +75,7 @@ describe('ImportService', () => {
     expect(imported.status).toBe('success');
     if (imported.status !== 'success') throw new Error('expected a successful import');
     expect(imported.book.title).toBe('江湖');
+    expect(imported.book.chapters).toEqual([{ title: '第一章', charOffset: 0 }]);
     expect((await repository.loadBook(imported.book.id)).content).toBe('第一章\n江湖夜雨十年灯。');
     expect(await service.importBook()).toMatchObject({ status: 'duplicate', bookId: imported.book.id });
   });

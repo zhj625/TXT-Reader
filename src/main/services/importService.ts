@@ -65,6 +65,8 @@ export class ImportService {
         characterLength: processed.characterLength,
         importedAt,
         lastReadAt: null,
+        author: 'author' in processed ? processed.author ?? null : null,
+        chapters: processed.chapters,
         progress: {
           charOffset: 0,
           percentage: 0,

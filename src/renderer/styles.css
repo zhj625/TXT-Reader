@@ -278,6 +278,15 @@ button:focus-visible,
   font-size: 12px;
 }
 
+.book-author {
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: #71685c;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .progress-track {
   width: 100%;
   height: 3px;
@@ -457,6 +466,12 @@ button:focus-visible,
   background: rgba(249, 246, 239, 0.97);
 }
 
+.reader-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .back-button {
   width: fit-content;
   padding: 9px 12px;
@@ -471,6 +486,33 @@ button:focus-visible,
 .back-button:hover {
   color: #7f3e2a;
   background: #eee6dc;
+}
+
+.toc-button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  color: #7f3e2a;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toc-button:hover {
+  background: #eee6dc;
+}
+
+.toc-button span {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 3px;
+  padding: 0 4px;
+  place-items: center;
+  border-radius: 9px;
+  color: #7a4a38;
+  background: #e9ddd1;
+  font-size: 10px;
 }
 
 .back-button span {
@@ -546,6 +588,106 @@ button:focus-visible,
   height: 100%;
   background: #a55438;
   transition: width 180ms linear;
+}
+
+.toc-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  border: 0;
+  background: rgba(36, 28, 21, 0.2);
+  cursor: default;
+}
+
+.toc-panel {
+  position: fixed;
+  z-index: 21;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  width: min(380px, 88vw);
+  flex-direction: column;
+  color: #302b25;
+  background: #faf6ee;
+  box-shadow: 16px 0 44px rgba(47, 34, 24, 0.2);
+}
+
+.toc-panel > header {
+  display: flex;
+  min-height: 78px;
+  padding: 18px 20px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(80, 66, 50, 0.1);
+}
+
+.toc-panel > header div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toc-panel > header strong {
+  font-family: STSong, SimSun, serif;
+  font-size: 21px;
+}
+
+.toc-panel > header span {
+  color: #8c8276;
+  font-size: 11px;
+}
+
+.toc-panel > header button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  color: #756b60;
+  background: transparent;
+  cursor: pointer;
+  font-size: 23px;
+}
+
+.toc-panel > header button:hover {
+  color: #7f3e2a;
+  background: #eee5da;
+}
+
+.toc-panel nav {
+  overflow: auto;
+  padding: 10px 12px 24px;
+}
+
+.toc-panel nav button {
+  display: grid;
+  width: 100%;
+  padding: 12px 13px;
+  align-items: start;
+  grid-template-columns: 28px 1fr;
+  border: 0;
+  border-radius: 7px;
+  color: #514a42;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.toc-panel nav button:hover {
+  background: #f0e7dc;
+}
+
+.toc-panel nav button.active {
+  color: #7f3e2a;
+  background: #ebded1;
+  font-weight: 650;
+}
+
+.toc-panel nav button span {
+  color: #a09588;
+  font-size: 11px;
+  line-height: 2.1;
 }
 
 .reading-scroller {
@@ -659,6 +801,15 @@ button:focus-visible,
   .reader-toolbar {
     padding: 0 13px;
     grid-template-columns: 92px minmax(120px, 1fr) 126px;
+  }
+
+  .reader-nav-controls {
+    gap: 0;
+  }
+
+  .toc-button {
+    padding-right: 5px;
+    padding-left: 5px;
   }
 
   .reading-column,

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type {
   BookContent,
+  BookChapter,
   BookRecord,
   BookSummary,
   FontSize,
@@ -17,7 +18,7 @@ const BOOK_ID_PATTERN = /^[a-f0-9]{64}$/;
 const FONT_SIZES = new Set<FontSize>(['small', 'medium', 'large']);
 
 const createDefaultLibrary = (): LibraryFile => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   books: [],
   settings: { fontSize: 'medium' },
 });
@@ -30,12 +31,25 @@ function isIsoDateOrNull(value: unknown): value is string | null {
   return value === null || (typeof value === 'string' && !Number.isNaN(Date.parse(value)));
 }
 
-function isBookRecord(value: unknown): value is BookRecord {
+function isBookChapter(value: unknown, characterLength: number): value is BookChapter {
+  if (!value || typeof value !== 'object') return false;
+  const chapter = value as Partial<BookChapter>;
+  return (
+    typeof chapter.title === 'string' &&
+    chapter.title.length > 0 &&
+    chapter.title.length <= 160 &&
+    Number.isSafeInteger(chapter.charOffset) &&
+    (chapter.charOffset ?? -1) >= 0 &&
+    (chapter.charOffset ?? characterLength + 1) <= characterLength
+  );
+}
+
+function isBookRecord(value: unknown, schemaVersion: 1 | 2): boolean {
   if (!value || typeof value !== 'object') return false;
   const book = value as Partial<BookRecord>;
   const progress = book.progress as Partial<BookRecord['progress']> | undefined;
 
-  return (
+  const commonFieldsValid = (
     typeof book.id === 'string' &&
     BOOK_ID_PATTERN.test(book.id) &&
     typeof book.title === 'string' &&
@@ -53,6 +67,16 @@ function isBookRecord(value: unknown): value is BookRecord {
     typeof progress?.percentage === 'number' &&
     isIsoDateOrNull(progress?.updatedAt)
   );
+  if (!commonFieldsValid) return false;
+  if (schemaVersion === 1) return true;
+
+  return (
+    (book.author === null || typeof book.author === 'string') &&
+    Array.isArray(book.chapters) &&
+    book.chapters.every((chapter) => isBookChapter(chapter, book.characterLength!)) &&
+    book.chapters.every((chapter, index) =>
+      index === 0 || chapter.charOffset >= book.chapters![index - 1].charOffset)
+  );
 }
 
 export function parseLibraryFile(raw: string): LibraryFile {
@@ -69,18 +93,31 @@ export function parseLibraryFile(raw: string): LibraryFile {
     throw new ReaderError('STORAGE_UNAVAILABLE', '本地书库数据格式无效。');
   }
 
-  const candidate = parsed as Partial<LibraryFile>;
+  const candidate = parsed as {
+    schemaVersion?: 1 | 2;
+    books?: unknown[];
+    settings?: ReaderSettings;
+  };
   if (
-    candidate.schemaVersion !== 1 ||
+    (candidate.schemaVersion !== 1 && candidate.schemaVersion !== 2) ||
     !Array.isArray(candidate.books) ||
-    !candidate.books.every(isBookRecord) ||
+    !candidate.books.every((book) => isBookRecord(book, candidate.schemaVersion as 1 | 2)) ||
     !candidate.settings ||
     !FONT_SIZES.has(candidate.settings.fontSize)
   ) {
     throw new ReaderError('STORAGE_UNAVAILABLE', '本地书库数据版本或格式无效。');
   }
 
-  const normalized = cloneLibrary(candidate as LibraryFile);
+  const sourceVersion = candidate.schemaVersion as 1 | 2;
+  const normalized = cloneLibrary({
+    settings: candidate.settings!,
+    schemaVersion: 2,
+    books: (candidate.books as BookRecord[]).map((book) => ({
+      ...book,
+      author: sourceVersion === 1 ? null : book.author,
+      chapters: sourceVersion === 1 ? [] : book.chapters,
+    })),
+  });
   normalized.books = normalized.books.map((book) => {
     const charOffset = clampCharOffset(book.progress.charOffset, book.characterLength);
     return {
@@ -128,7 +165,12 @@ export class LibraryRepository {
     try {
       await mkdir(this.booksPath, { recursive: true });
       try {
-        this.library = parseLibraryFile(await readFile(this.libraryPath, 'utf8'));
+        const raw = await readFile(this.libraryPath, 'utf8');
+        this.library = parseLibraryFile(raw);
+        if ((JSON.parse(raw) as { schemaVersion?: unknown }).schemaVersion !== 2) {
+          this.revision = 1;
+          await this.flush();
+        }
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
         this.library = createDefaultLibrary();
@@ -209,8 +251,10 @@ export class LibraryRepository {
       return {
         id: record.id,
         title: record.title,
+        author: record.author,
         content,
         characterLength: content.length,
+        chapters: structuredClone(record.chapters),
         progress: structuredClone(record.progress),
       };
     } catch (error) {

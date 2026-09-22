@@ -22,6 +22,8 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   const [book, setBook] = useState<BookContent | null>(null);
   const [fontSize, setFontSize] = useState<FontSize>('medium');
   const [progress, setProgress] = useState(0);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [tocOpen, setTocOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const scrollElementRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<number | null>(null);
@@ -29,6 +31,15 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   const pendingRestoreRef = useRef<number | null>(null);
 
   const chunks = useMemo(() => createTextChunks(book?.content ?? ''), [book?.content]);
+  const activeChapterIndex = useMemo(() => {
+    if (!book || book.chapters.length === 0) return -1;
+    let active = 0;
+    for (let index = 1; index < book.chapters.length; index += 1) {
+      if (book.chapters[index].charOffset > currentOffset) break;
+      active = index;
+    }
+    return active;
+  }, [book, currentOffset]);
   // TanStack Virtual intentionally exposes imperative functions; React Compiler is not enabled here.
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
@@ -86,6 +97,7 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
         setBook(loadedBook);
         setFontSize(settings.fontSize);
         setProgress(loadedBook.progress.percentage);
+        setCurrentOffset(loadedBook.progress.charOffset);
         pendingOffsetRef.current = loadedBook.progress.charOffset;
         pendingRestoreRef.current = loadedBook.progress.charOffset;
       })
@@ -112,6 +124,7 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   const persistOffset = useCallback((charOffset: number) => {
     if (!book) return;
     pendingOffsetRef.current = charOffset;
+    setCurrentOffset(charOffset);
     setProgress(calculatePercentage(charOffset, book.characterLength));
     void window.readerApi.saveProgress({ bookId: book.id, charOffset }).catch(() => {
       onNotice('阅读进度暂时没有保存成功');
@@ -121,6 +134,7 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   const handleScroll = () => {
     const offset = getViewportOffset();
     pendingOffsetRef.current = offset;
+    setCurrentOffset(offset);
     if (book) setProgress(calculatePercentage(offset, book.characterLength));
     if (saveTimerRef.current !== null) return;
     saveTimerRef.current = window.setTimeout(() => {
@@ -165,6 +179,23 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
     }
   };
 
+  const handleChapterJump = (charOffset: number) => {
+    pendingOffsetRef.current = charOffset;
+    setCurrentOffset(charOffset);
+    restoreOffset(charOffset);
+    persistOffset(charOffset);
+    setTocOpen(false);
+  };
+
+  useEffect(() => {
+    if (!tocOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setTocOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [tocOpen]);
+
   if (loading || !book) {
     return (
       <main className="reader-page reader-loading" data-testid="reader-loading">
@@ -177,12 +208,19 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   return (
     <main className={`reader-page font-${fontSize}`} data-testid="reader-page">
       <header className="reader-toolbar">
-        <button className="back-button" type="button" onClick={() => void handleBack()}>
-          <span aria-hidden="true">←</span> 书架
-        </button>
+        <div className="reader-nav-controls">
+          <button className="back-button" type="button" onClick={() => void handleBack()}>
+            <span aria-hidden="true">←</span> 书架
+          </button>
+          {book.chapters.length > 0 ? (
+            <button className="toc-button" type="button" onClick={() => setTocOpen(true)}>
+              目录 <span>{book.chapters.length}</span>
+            </button>
+          ) : null}
+        </div>
         <div className="reader-title-block">
           <h1>{book.title}</h1>
-          <span>{progress.toFixed(progress < 1 ? 1 : 0)}%</span>
+          <span>{book.author ? `${book.author} · ` : ''}{progress.toFixed(progress < 1 ? 1 : 0)}%</span>
         </div>
         <div className="font-controls" aria-label="字号">
           {FONT_SIZE_LABELS.map((option) => (
@@ -203,6 +241,40 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
       <div className="reader-progress-line" aria-hidden="true">
         <span style={{ width: `${progress}%` }} />
       </div>
+
+      {tocOpen ? (
+        <>
+          <button
+            className="toc-backdrop"
+            type="button"
+            aria-label="关闭目录"
+            onClick={() => setTocOpen(false)}
+          />
+          <aside className="toc-panel" aria-label="书籍目录">
+            <header>
+              <div>
+                <strong>目录</strong>
+                <span>{book.chapters.length} 章</span>
+              </div>
+              <button type="button" aria-label="关闭目录" onClick={() => setTocOpen(false)}>×</button>
+            </header>
+            <nav>
+              {book.chapters.map((chapter, index) => (
+                <button
+                  className={index === activeChapterIndex ? 'active' : ''}
+                  type="button"
+                  key={`${chapter.charOffset}-${chapter.title}`}
+                  aria-current={index === activeChapterIndex ? 'location' : undefined}
+                  onClick={() => handleChapterJump(chapter.charOffset)}
+                >
+                  <span>{index + 1}</span>
+                  {chapter.title}
+                </button>
+              ))}
+            </nav>
+          </aside>
+        </>
+      ) : null}
 
       <div
         ref={scrollElementRef}

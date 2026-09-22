@@ -10,6 +10,11 @@ export interface ReadingProgress {
   updatedAt: string | null;
 }
 
+export interface BookChapter {
+  title: string;
+  charOffset: number;
+}
+
 export interface BookRecord {
   id: string;
   title: string;
@@ -18,11 +23,13 @@ export interface BookRecord {
   characterLength: number;
   importedAt: string;
   lastReadAt: string | null;
+  author: string | null;
+  chapters: BookChapter[];
   progress: ReadingProgress;
 }
 
 export interface LibraryFile {
-  schemaVersion: 1;
+  schemaVersion: 2;
   books: BookRecord[];
   settings: ReaderSettings;
 }
@@ -32,8 +39,10 @@ export type BookSummary = BookRecord;
 export interface BookContent {
   id: string;
   title: string;
+  author: string | null;
   content: string;
   characterLength: number;
+  chapters: BookChapter[];
   progress: ReadingProgress;
 }
 

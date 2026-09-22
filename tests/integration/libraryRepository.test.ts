@@ -14,6 +14,8 @@ function makeBook(idCharacter: string, overrides: Partial<BookRecord> = {}): Boo
     characterLength: 100,
     importedAt: '2026-09-01T00:00:00.000Z',
     lastReadAt: null,
+    author: null,
+    chapters: [],
     progress: { charOffset: 0, percentage: 0, updatedAt: null },
     ...overrides,
   };
@@ -47,6 +49,32 @@ describe('LibraryRepository', () => {
     expect(loaded.progress).toMatchObject({ charOffset: 42, percentage: 42 });
     expect(restarted.getSettings()).toEqual({ fontSize: 'large' });
     expect(restarted.listBooks()[0].lastReadAt).not.toBeNull();
+  });
+
+  it('migrates a v1 library without losing books or reading progress', async () => {
+    const current = makeBook('d', {
+      progress: { charOffset: 35, percentage: 35, updatedAt: '2026-09-03T00:00:00.000Z' },
+    });
+    const legacyBook: Partial<BookRecord> = { ...current };
+    delete legacyBook.author;
+    delete legacyBook.chapters;
+    await writeFile(path.join(userDataPath, 'library.json'), JSON.stringify({
+      schemaVersion: 1,
+      books: [legacyBook],
+      settings: { fontSize: 'medium' },
+    }), 'utf8');
+
+    const repository = new LibraryRepository(userDataPath);
+    await repository.initialize();
+
+    expect(repository.listBooks()[0]).toMatchObject({
+      id: current.id,
+      author: null,
+      chapters: [],
+      progress: { charOffset: 35 },
+    });
+    expect(JSON.parse(await readFile(path.join(userDataPath, 'library.json'), 'utf8')))
+      .toMatchObject({ schemaVersion: 2 });
   });
 
   it('sorts books by the most recent reading or import time', async () => {

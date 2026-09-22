@@ -1,4 +1,5 @@
 import { Worker } from 'node:worker_threads';
+import type { BookChapter } from '../../shared/contracts';
 import { ReaderError } from '../../shared/errors';
 
 export interface ProcessedText {
@@ -6,6 +7,7 @@ export interface ProcessedText {
   id: string;
   characterLength: number;
   encoding: 'utf8' | 'gb18030';
+  chapters: BookChapter[];
 }
 
 interface WorkerSuccess {
@@ -61,6 +63,18 @@ function decode(bytes, iconv) {
   }
 }
 
+function detectChapters(content) {
+  const chapters = [];
+  const heading = /^(?:第[0-9０-９一二三四五六七八九十百千万零〇两]+[章节卷回部篇集]|序章|序言|楔子|引子|前言|后记|尾声|终章|番外(?:[0-9０-９一二三四五六七八九十百千万零〇两]+)?|Chapter\s+[0-9IVXLCDM]+)(?:[\s\u3000]*[：:、.．\-—]?\s*.*)?$/i;
+  const lines = content.matchAll(/^.*$/gm);
+  for (const match of lines) {
+    const title = match[0].trim();
+    if (!title || title.length > 80 || !heading.test(title)) continue;
+    chapters.push({ title, charOffset: match.index + match[0].indexOf(title) });
+  }
+  return chapters;
+}
+
 parentPort.once('message', ({ bytes, iconvModulePath }) => {
   try {
     const iconv = require(iconvModulePath);
@@ -74,6 +88,7 @@ parentPort.once('message', ({ bytes, iconvModulePath }) => {
         id: createHash('sha256').update(content, 'utf8').digest('hex'),
         characterLength: content.length,
         encoding: decoded.encoding,
+        chapters: detectChapters(content),
       },
     });
   } catch (error) {

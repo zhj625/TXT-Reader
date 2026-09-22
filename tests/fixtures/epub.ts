@@ -45,13 +45,24 @@ export function zipFiles(files: Record<string, string>): Buffer {
 }
 
 export function epubFiles(version = '3.0'): Record<string, string> {
-  return {
+  const isEpub3 = version === '3.0';
+  const navigationManifest = isEpub3
+    ? '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
+    : '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>';
+  const spineAttributes = isEpub3 ? '' : ' toc="ncx"';
+  const files: Record<string, string> = {
     mimetype: 'application/epub+zip',
     'META-INF/container.xml': '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OPS/book.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
-    'OPS/book.opf': '<package xmlns="http://www.idpf.org/2007/opf" version="' + version + '"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>山河 &amp; 故人</dc:title></metadata><manifest><item id="two" href="Text/two.xhtml" media-type="application/xhtml+xml"/><item id="one" href="Text/%E4%B8%80.xhtml" media-type="application/xhtml+xml"/><item id="extra" href="extra.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="one"/><itemref idref="two"/><itemref idref="extra" linear="no"/></spine></package>',
+    'OPS/book.opf': '<package xmlns="http://www.idpf.org/2007/opf" version="' + version + '"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>山河 &amp; 故人</dc:title><dc:creator>汤姆 · 霍加德</dc:creator></metadata><manifest><item id="two" href="Text/two.xhtml" media-type="application/xhtml+xml"/><item id="one" href="Text/%E4%B8%80.xhtml" media-type="application/xhtml+xml"/><item id="extra" href="extra.xhtml" media-type="application/xhtml+xml"/>' + navigationManifest + '</manifest><spine' + spineAttributes + '><itemref idref="one"/><itemref idref="two"/><itemref idref="extra" linear="no"/></spine></package>',
     'OPS/Text/two.xhtml': '<html xmlns="http://www.w3.org/1999/xhtml"><body><h1>第二章</h1><p>故人归来。</p></body></html>',
     'OPS/Text/一.xhtml': '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>不应显示</title></head><body><h1>第一章</h1><p>山河<em>入梦</em>，明月 &amp; 星辰。<br/>下一行。</p><script>不要执行</script><style>不要显示</style><p hidden="hidden">隐藏文字</p></body></html>',
   };
+  if (isEpub3) {
+    files['OPS/nav.xhtml'] = '<html xmlns="http://www.w3.org/1999/xhtml"><body><nav><ol><li><a href="Text/%E4%B8%80.xhtml">壹 · 山河入梦</a></li><li><a href="Text/two.xhtml">贰 · 故人归来</a></li></ol></nav></body></html>';
+  } else {
+    files['OPS/toc.ncx'] = '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/"><navMap><navPoint><navLabel><text>壹 · 山河入梦</text></navLabel><content src="Text/%E4%B8%80.xhtml"/></navPoint><navPoint><navLabel><text>贰 · 故人归来</text></navLabel><content src="Text/two.xhtml"/></navPoint></navMap></ncx>';
+  }
+  return files;
 }
 
 export const expectedEpubText = '第一章\n\n山河入梦，明月 & 星辰。\n\n下一行。\n\n第二章\n\n故人归来。';

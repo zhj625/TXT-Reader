@@ -121,7 +121,16 @@ test.describe('TXT Reader desktop flow', () => {
     await expect(body).toBeVisible();
     await expect(body).toHaveText(expectedEpubText);
     await expect(body.locator('.text-chunk').first()).toHaveCSS('color', 'rgb(23, 21, 18)');
+    await page.getByRole('button', {name:'目录 2'}).click();
+    await expect(page.getByRole('complementary', {name:'书籍目录'})).toBeVisible();
+    await page.getByRole('button', {name:/贰 · 故人归来/}).click();
+    await page.getByRole('button', {name:'目录 2'}).click();
+    const tableOfContents = page.getByRole('complementary', {name:'书籍目录'});
+    await expect(tableOfContents.getByRole('button', {name:/贰 · 故人归来/}))
+      .toHaveAttribute('aria-current', 'location');
+    await tableOfContents.getByRole('button', {name:'关闭目录'}).click();
     await page.getByRole('button', {name:/书架/}).click();
+    await expect(page.getByText('汤姆 · 霍加德', {exact:true})).toBeVisible();
     await page.getByTestId('import-book').click();
     await expect(page.getByRole('status')).toContainText('已经在书架中了');
     page.once('dialog', (dialog) => dialog.accept());

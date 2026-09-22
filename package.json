@@ -1,8 +1,8 @@
 {
   "name": "moodu-txt-reader",
   "productName": "TXT Reader",
-  "version": "0.2.1",
-  "description": "A simple, offline-first desktop TXT reader",
+  "version": "0.3.0",
+  "description": "An offline-first desktop ebook reader for TXT and EPUB",
   "author": "TXT Reader Contributors",
   "type": "module",
   "main": ".vite/build/main.cjs",

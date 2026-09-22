@@ -16,7 +16,7 @@ $content = Get-Content -LiteralPath $documentPath -Raw -Encoding UTF8
 # Normalize Windows checkouts before applying multiline heading expressions.
 $content = $content -replace "`r`n?", "`n"
 $requiredPatterns = @(
-    '(?m)^# TXT .+ MVP .+$',
+    '(?m)^# 墨读本地电子书阅读器技术方案$',
     '(?m)^## 3\. 技术栈$',
     '(?m)^## 4\. 总体架构$',
     '(?m)^## 5\. 本地数据设计$',
@@ -31,6 +31,12 @@ $requiredPatterns = @(
     'UTF-8',
     'GBK/GB18030',
     'iconv-lite',
+    'yauzl',
+    '@xmldom/xmldom',
+    'schemaVersion: 2',
+    'Navigation',
+    'NCX',
+    '自动更新',
     '10.+20 MB',
     'charOffset',
     'nodeIntegration: false',
@@ -38,7 +44,7 @@ $requiredPatterns = @(
     'sandbox: true',
     'Vitest',
     'Playwright Electron',
-    '不删除用户的原始 TXT 文件'
+    '不删除用户的原始 TXT / EPUB 文件'
 )
 
 foreach ($pattern in $requiredPatterns) {

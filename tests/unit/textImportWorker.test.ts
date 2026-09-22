@@ -22,6 +22,17 @@ describe('TXT worker processing', () => {
     expect(result.content).toBe('中文小说：山高水长。');
   });
 
+  it('recognizes common TXT chapter headings and keeps exact character offsets', async () => {
+    const content = '序章\n风起。\n\n第一章 山河\n故人来。\n\nChapter 2 Return\n明月照归途。';
+    const result = await processTextBytesInWorker(Buffer.from(content));
+
+    expect(result.chapters).toEqual([
+      { title: '序章', charOffset: content.indexOf('序章') },
+      { title: '第一章 山河', charOffset: content.indexOf('第一章 山河') },
+      { title: 'Chapter 2 Return', charOffset: content.indexOf('Chapter 2 Return') },
+    ]);
+  });
+
   it('rejects whitespace-only and control-character-heavy files', async () => {
     await expect(processTextBytesInWorker(Buffer.from(' \r\n\t '))).rejects.toMatchObject({
       code: 'EMPTY_FILE',

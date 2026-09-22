@@ -2,6 +2,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fromBuffer, type Entry, type ZipFile } from 'yauzl';
 import { DOMParser, type Node, type Element } from '@xmldom/xmldom';
+import type { BookChapter } from '../../shared/contracts';
 import { ReaderError } from '../../shared/errors';
 
 const MAX_EXPANDED_BYTES = 100 * 1024 * 1024;
@@ -59,6 +60,74 @@ function parseXml(text: string): Element {
     .parseFromString(text, 'application/xhtml+xml');
   if (!document.documentElement) throw invalid();
   return document.documentElement;
+}
+
+function cleanLabel(value: string | null | undefined): string | undefined {
+  const label = value?.replace(/\s+/g, ' ').trim();
+  return label ? label.slice(0, 160) : undefined;
+}
+
+function firstHeading(body: Element): string | undefined {
+  for (const name of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) {
+    const label = cleanLabel(elements(body, name)[0]?.textContent);
+    if (label) return label;
+  }
+  return undefined;
+}
+
+async function readNavigationTitles(
+  packagePath: string,
+  manifest: Map<string | null, Element>,
+  spine: Element,
+  read: (name: string) => Promise<string>,
+): Promise<Map<string, string>> {
+  const titles = new Map<string, string>();
+  const packageBase = path.posix.dirname(packagePath);
+  const addTitle = (base: string, href: string | null, label: string | undefined) => {
+    if (!href || !label) return;
+    try {
+      const target = archivePath(base, href);
+      if (!titles.has(target)) titles.set(target, label);
+    } catch {
+      // A broken navigation entry should not make otherwise readable chapters unavailable.
+    }
+  };
+
+  const navItem = Array.from(manifest.values()).find((item) =>
+    (item.getAttribute('properties') ?? '').split(/\s+/).includes('nav'));
+  if (navItem) {
+    try {
+      const navPath = archivePath(packageBase, navItem.getAttribute('href') ?? '');
+      const navigation = parseXml(await read(navPath));
+      for (const link of elements(navigation, 'a')) {
+        addTitle(path.posix.dirname(navPath), link.getAttribute('href'), cleanLabel(link.textContent));
+      }
+    } catch {
+      // Fall back to NCX or visible chapter headings.
+    }
+  }
+
+  const ncxItem = manifest.get(spine.getAttribute('toc'))
+    ?? Array.from(manifest.values()).find((item) =>
+      item.getAttribute('media-type') === 'application/x-dtbncx+xml');
+  if (ncxItem) {
+    try {
+      const ncxPath = archivePath(packageBase, ncxItem.getAttribute('href') ?? '');
+      const navigation = parseXml(await read(ncxPath));
+      for (const point of elements(navigation, 'navPoint')) {
+        const label = cleanLabel(elements(elements(point, 'navLabel')[0], 'text')[0]?.textContent);
+        addTitle(
+          path.posix.dirname(ncxPath),
+          elements(point, 'content')[0]?.getAttribute('src') ?? null,
+          label,
+        );
+      }
+    } catch {
+      // Fall back to visible chapter headings.
+    }
+  }
+
+  return titles;
 }
 
 function bodyText(body: Element): string {
@@ -123,10 +192,15 @@ export async function processEpubBytes(bytes: Buffer) {
     if (packageRoot.localName !== 'package') throw invalid();
     const metadata = elements(packageRoot, 'metadata')[0];
     const title = metadata ? elements(metadata, 'title')[0]?.textContent?.trim() : undefined;
+    const author = metadata
+      ? elements(metadata, 'creator').map((item) => cleanLabel(item.textContent)).filter(Boolean).join('、') || undefined
+      : undefined;
     const manifest = new Map(elements(packageRoot, 'item').map((item) => [item.getAttribute('id'), item]));
     const spine = elements(packageRoot, 'spine')[0];
     if (!spine) throw invalid();
-    const chapters: string[] = [];
+    const navigationTitles = await readNavigationTitles(packagePath, manifest, spine, read);
+    const chapterAnchors: BookChapter[] = [];
+    let content = '';
     for (const reference of elements(spine, 'itemref')) {
       if (reference.getAttribute('linear') === 'no') continue;
       const item = manifest.get(reference.getAttribute('idref'));
@@ -136,11 +210,25 @@ export async function processEpubBytes(bytes: Buffer) {
       const body = elements(document, 'body')[0];
       if (!body) throw invalid();
       const text = bodyText(body);
-      if (text) chapters.push(text);
+      if (text) {
+        if (content) content += '\n\n';
+        const charOffset = content.length;
+        content += text;
+        chapterAnchors.push({
+          title: navigationTitles.get(chapterPath) ?? firstHeading(body) ?? `第 ${chapterAnchors.length + 1} 章`,
+          charOffset,
+        });
+      }
     }
-    const content = chapters.join('\n\n');
     if (!content.trim()) throw new ReaderError('EMPTY_FILE');
-    return { content, title, characterLength: content.length, id: createHash('sha256').update(content, 'utf8').digest('hex') };
+    return {
+      content,
+      title,
+      author,
+      chapters: chapterAnchors,
+      characterLength: content.length,
+      id: createHash('sha256').update(content, 'utf8').digest('hex'),
+    };
   } catch (error) {
     if (error instanceof ReaderError) throw error;
     throw new ReaderError('INVALID_EPUB', undefined, { cause: error });

@@ -157,6 +157,7 @@ export function BookshelfPage({ onOpen, onNotice }: BookshelfPageProps) {
                   <div className="book-heading">
                     <h2>{book.title}</h2>
                   </div>
+                  {book.author ? <p className="book-author">{book.author}</p> : null}
                   <p className="book-meta">{formatFileSize(book.byteLength)} · {formatLastRead(book)}</p>
                   <div className="progress-track" aria-label={`阅读进度 ${book.progress.percentage.toFixed(1)}%`}>
                     <span style={{ width: `${book.progress.percentage}%` }} />
