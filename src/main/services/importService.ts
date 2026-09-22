@@ -48,8 +48,15 @@ export class ImportService {
       const processed = extension === '.epub'
         ? await processEpubBytes(bytes)
         : await processTextBytesInWorker(bytes, this.options.iconvModulePath);
+      const processedAuthor = 'author' in processed ? processed.author ?? null : null;
       const existing = this.repository.getBookRecord(processed.id);
       if (existing) {
+        const enriched = await this.repository.enrichBookMetadata(
+          existing.id,
+          processedAuthor,
+          processed.chapters,
+        );
+        if (enriched) return { status: 'success', book: enriched };
         return { status: 'duplicate', bookId: existing.id, title: existing.title };
       }
 
@@ -65,7 +72,7 @@ export class ImportService {
         characterLength: processed.characterLength,
         importedAt,
         lastReadAt: null,
-        author: 'author' in processed ? processed.author ?? null : null,
+        author: processedAuthor,
         chapters: processed.chapters,
         progress: {
           charOffset: 0,

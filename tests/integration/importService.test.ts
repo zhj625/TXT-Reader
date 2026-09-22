@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import iconv from 'iconv-lite';
@@ -49,6 +49,47 @@ describe('ImportService', () => {
     await repository.initialize();
     expect(await new ImportService(repository, {pickFile:async () => sourcePath}).importBook())
       .toMatchObject({status:'success', book:{title:'备用书名'}});
+  });
+
+  it('enriches a migrated book on re-import without resetting reading progress', async () => {
+    const sourcePath = path.join(testPath, 'legacy.epub');
+    await writeFile(sourcePath, zipFiles(epubFiles()));
+    const repository = new LibraryRepository(userDataPath);
+    await repository.initialize();
+    const service = new ImportService(repository, {pickFile: async () => sourcePath});
+    const initial = await service.importBook();
+    if (initial.status !== 'success') throw Error('Initial import failed');
+    repository.saveProgress(initial.book.id, 18);
+    await repository.flush();
+
+    const libraryPath = path.join(userDataPath, 'library.json');
+    const legacy = JSON.parse(await readFile(libraryPath, 'utf8')) as {
+      schemaVersion: number;
+      books: Array<Record<string, unknown>>;
+    };
+    legacy.schemaVersion = 1;
+    delete legacy.books[0].author;
+    delete legacy.books[0].chapters;
+    await writeFile(libraryPath, JSON.stringify(legacy), 'utf8');
+
+    const reopened = new LibraryRepository(userDataPath);
+    await reopened.initialize();
+    const migratedService = new ImportService(reopened, {pickFile: async () => sourcePath});
+    const enriched = await migratedService.importBook();
+
+    expect(enriched).toMatchObject({
+      status: 'success',
+      book: {
+        author: '汤姆 · 霍加德',
+        progress: { charOffset: 18 },
+      },
+    });
+    if (enriched.status !== 'success') throw Error('Metadata enrichment failed');
+    expect(enriched.book.chapters).toHaveLength(2);
+    expect(await migratedService.importBook()).toMatchObject({
+      status: 'duplicate',
+      bookId: initial.book.id,
+    });
   });
 
   it('returns an EPUB error without changing the library', async () => {

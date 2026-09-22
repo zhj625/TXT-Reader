@@ -240,6 +240,39 @@ export class LibraryRepository {
     }
   }
 
+  async enrichBookMetadata(
+    bookId: string,
+    author: string | null,
+    chapters: BookChapter[],
+  ): Promise<BookSummary | null> {
+    this.assertInitialized();
+    this.assertValidBookId(bookId);
+    const record = this.library.books.find((book) => book.id === bookId);
+    if (!record) throw new ReaderError('BOOK_NOT_FOUND');
+    if (
+      !chapters.every((chapter) => isBookChapter(chapter, record.characterLength)) ||
+      chapters.some((chapter, index) =>
+        index > 0 && chapter.charOffset < chapters[index - 1].charOffset)
+    ) {
+      throw new ReaderError('INVALID_INPUT');
+    }
+
+    const nextAuthor = author?.trim().slice(0, 160) || record.author;
+    const nextChapters = chapters.length > 0 ? structuredClone(chapters) : record.chapters;
+    if (
+      nextAuthor === record.author &&
+      JSON.stringify(nextChapters) === JSON.stringify(record.chapters)
+    ) {
+      return null;
+    }
+
+    record.author = nextAuthor;
+    record.chapters = nextChapters;
+    this.markDirty();
+    await this.flush();
+    return structuredClone(record);
+  }
+
   async loadBook(bookId: string): Promise<BookContent> {
     this.assertInitialized();
     this.assertValidBookId(bookId);
