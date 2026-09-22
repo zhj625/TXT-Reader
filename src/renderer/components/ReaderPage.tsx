@@ -74,10 +74,16 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
     const chunkIndex = findChunkIndex(chunks, normalized);
     const chunk = chunks[chunkIndex];
     const innerRatio = (normalized - chunk.startOffset) / Math.max(chunk.text.length, 1);
+    // Reset stale measurements before rendering the target. Resetting after scrollToIndex
+    // discards the freshly measured height and can make adjacent chunks overlap.
+    virtualizer.measure();
     virtualizer.scrollToIndex(chunkIndex, { align: 'start' });
 
     window.requestAnimationFrame(() => {
-      virtualizer.measure();
+      const target = scrollElementRef.current?.querySelector<HTMLElement>(
+        `[data-index="${chunkIndex}"]`,
+      );
+      if (target) virtualizer.measureElement(target);
       window.requestAnimationFrame(() => {
         const item = virtualizer.getVirtualItems().find((entry) => entry.index === chunkIndex);
         const scroller = scrollElementRef.current;

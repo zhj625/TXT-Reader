@@ -100,6 +100,18 @@ test.describe('TXT Reader desktop flow', () => {
     const card = page.locator('[data-testid^="book-"]');
     await expect(card).toContainText('山河入梦');
     await expect(card).toContainText('继续阅读');
+    await card.getByRole('button', {name:'打开《山河入梦》'}).click();
+    await expect(page.getByTestId('reader-page')).toBeVisible();
+    await page.waitForTimeout(500);
+    const chunksDoNotOverlap = await page.locator('.text-chunk').evaluateAll((elements) => {
+      const rectangles = elements
+        .map((element) => element.getBoundingClientRect())
+        .sort((left, right) => left.top - right.top);
+      return rectangles.every((rectangle, index) =>
+        index === 0 || rectangle.top >= rectangles[index - 1].bottom - 1);
+    });
+    expect(chunksDoNotOverlap).toBe(true);
+    await page.getByRole('button', {name:/书架/}).click();
 
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: '移除《山河入梦》' }).click();
