@@ -10,6 +10,12 @@ const readerApi = Object.freeze<ReaderDesktopApi>({
     ipcRenderer.on(IPC_CHANNELS.fullScreenChanged, handler);
     return () => ipcRenderer.removeListener(IPC_CHANNELS.fullScreenChanged, handler);
   },
+  isMaximized: () => ipcRenderer.invoke(IPC_CHANNELS.isMaximized),
+  onMaximize: (listener: () => void) => {
+    const handler = () => listener();
+    ipcRenderer.on(IPC_CHANNELS.maximized, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.maximized, handler);
+  },
   getUpdateState: () => ipcRenderer.invoke(IPC_CHANNELS.getUpdateState),
   checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.checkForUpdates),
   listBooks: () => ipcRenderer.invoke(IPC_CHANNELS.listBooks),

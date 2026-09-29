@@ -69,6 +69,7 @@ function createMainWindow(): BrowserWindow {
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.on('enter-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, true));
   window.on('leave-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, false));
+  window.on('maximize', () => window.webContents.send(IPC_CHANNELS.maximized));
   window.webContents.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigation(targetUrl)) event.preventDefault();
   });

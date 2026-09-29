@@ -39,13 +39,28 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
       setIsFullScreen(fullScreen);
       setControlsVisible(false);
     };
-    const unsubscribe = window.readerApi.onFullScreenChange(syncFullScreen);
-    void window.readerApi.getFullScreen().then(syncFullScreen).catch(() => {
+    const enterFullScreen = () => {
+      if (!active) return;
+      void window.readerApi.setFullScreen(true).then(syncFullScreen).catch(() => {
+        onNotice('无法进入全屏');
+      });
+    };
+    const unsubscribeFullScreen = window.readerApi.onFullScreenChange(syncFullScreen);
+    const unsubscribeMaximize = window.readerApi.onMaximize(enterFullScreen);
+    void window.readerApi.isMaximized().then(async (maximized) => {
+      if (!active) return;
+      if (maximized) {
+        enterFullScreen();
+      } else {
+        syncFullScreen(await window.readerApi.getFullScreen());
+      }
+    }).catch(() => {
       onNotice('无法读取全屏状态');
     });
     return () => {
       active = false;
-      unsubscribe();
+      unsubscribeFullScreen();
+      unsubscribeMaximize();
     };
   }, [onNotice]);
 

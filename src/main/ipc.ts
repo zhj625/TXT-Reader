@@ -87,6 +87,7 @@ export function registerIpcHandlers({
   };
 
   handle(IPC_CHANNELS.getFullScreen, () => getMainWindow()?.isFullScreen() ?? false);
+  handle(IPC_CHANNELS.isMaximized, () => getMainWindow()?.isMaximized() ?? false);
   handle(IPC_CHANNELS.setFullScreen, (fullScreen: unknown) => {
     if (typeof fullScreen !== 'boolean') throw new ReaderError('INVALID_INPUT');
     const window = getMainWindow();

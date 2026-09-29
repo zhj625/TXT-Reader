@@ -453,7 +453,7 @@ button:focus-visible,
   display: flex;
   height: 100%;
   flex-direction: column;
-  background: #e8e3da;
+  background: #f1ede6;
 }
 
 .reader-toolbar {
@@ -774,8 +774,8 @@ button:focus-visible,
   min-height: 100%;
   margin: 0 auto;
   padding: 0 clamp(32px, 5vw, 80px) 1px;
-  background: #faf7f0;
-  box-shadow: 0 0 0 1px rgba(89, 75, 60, 0.07), 0 16px 48px rgba(67, 52, 38, 0.08);
+  background: #f7f4ee;
+  box-shadow: 0 0 0 1px rgba(89, 75, 60, 0.035), 0 12px 36px rgba(67, 52, 38, 0.035);
 }
 
 .reading-column {

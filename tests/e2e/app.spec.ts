@@ -164,6 +164,10 @@ test.describe('TXT Reader desktop flow', () => {
     const surface = await reader.evaluate((element) => getComputedStyle(element).backgroundColor);
     const paperColor = await paper.evaluate((element) => getComputedStyle(element).backgroundColor);
     expect(paperColor).not.toBe(surface);
+    const surfaceChannels = surface.match(/\d+/g)!.map(Number);
+    const paperChannels = paperColor.match(/\d+/g)!.map(Number);
+    expect(Math.max(...surfaceChannels.map((channel, index) => Math.abs(channel - paperChannels[index]))))
+      .toBeLessThanOrEqual(12);
     expect((await paper.boundingBox())!.width).toBeLessThanOrEqual(900);
 
     await page.getByRole('button', { name: '沉浸阅读' }).click();
@@ -182,6 +186,23 @@ test.describe('TXT Reader desktop flow', () => {
     await expect(reader).toHaveClass(/is-fullscreen/);
     await nativeWindow.evaluate((window) => window.setFullScreen(false));
     await expect(reader).not.toHaveClass(/is-fullscreen/);
+    await nativeWindow.evaluate((window) => window.unmaximize());
+    await nativeWindow.evaluate((window) => window.maximize());
+    await expect(reader).toHaveClass(/is-fullscreen/);
+    await expect(page.locator('.reader-toolbar')).toBeHidden();
+    expect(await nativeWindow.evaluate((window) => window.isFullScreen())).toBe(true);
+  });
+
+  test('opens a book in immersive mode when the shelf window is already maximized', async () => {
+    const originalPath = path.join(testPath, '最大化阅读.txt');
+    await writeFile(originalPath, '第一章\n安静地阅读这一页。', 'utf8');
+    const app = await launchTrackedApp(path.join(testPath, 'maximized-user-data'), originalPath);
+    const page = await app.firstWindow();
+    const nativeWindow = await app.browserWindow(page);
+    await nativeWindow.evaluate((window) => window.maximize());
+    await page.getByTestId('import-book').click();
+    await expect(page.getByTestId('reader-page')).toHaveClass(/is-fullscreen/);
+    await expect(page.locator('.reader-toolbar')).toBeHidden();
   });
 
   test('the packaged executable imports EPUB with bundled ZIP and XML dependencies', async () => {
