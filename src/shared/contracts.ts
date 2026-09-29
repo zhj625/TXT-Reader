@@ -75,6 +75,9 @@ export interface UpdateState {
 }
 
 export interface ReaderDesktopApi {
+  getFullScreen(): Promise<boolean>;
+  setFullScreen(fullScreen: boolean): Promise<boolean>;
+  onFullScreenChange(listener: (fullScreen: boolean) => void): () => void;
   getUpdateState(): Promise<UpdateState>;
   checkForUpdates(): Promise<UpdateState>;
   listBooks(): Promise<BookSummary[]>;
@@ -87,6 +90,9 @@ export interface ReaderDesktopApi {
 }
 
 export const IPC_CHANNELS = {
+  getFullScreen: 'window:full-screen:get',
+  setFullScreen: 'window:full-screen:set',
+  fullScreenChanged: 'window:full-screen:changed',
   getUpdateState: 'updates:state',
   checkForUpdates: 'updates:check',
   listBooks: 'books:list',

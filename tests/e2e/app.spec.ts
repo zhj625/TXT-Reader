@@ -152,6 +152,38 @@ test.describe('TXT Reader desktop flow', () => {
     await app.close();
   });
 
+  test('focuses the reading paper and hides controls while the window is full screen', async () => {
+    const originalPath = path.join(testPath, '沉浸阅读.txt');
+    await writeFile(originalPath, '第一章\n安静地阅读这一页。\n'.repeat(80), 'utf8');
+    const app = await launchTrackedApp(path.join(testPath, 'immersive-user-data'), originalPath);
+    const page = await app.firstWindow();
+    await page.getByTestId('import-book').click();
+
+    const reader = page.getByTestId('reader-page');
+    const paper = page.locator('.reading-paper');
+    const surface = await reader.evaluate((element) => getComputedStyle(element).backgroundColor);
+    const paperColor = await paper.evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(paperColor).not.toBe(surface);
+    expect((await paper.boundingBox())!.width).toBeLessThanOrEqual(900);
+
+    await page.getByRole('button', { name: '沉浸阅读' }).click();
+    await expect(reader).toHaveClass(/is-fullscreen/);
+    await expect(page.locator('.reader-toolbar')).toBeHidden();
+    await expect(page.locator('.reader-progress-line')).toBeHidden();
+
+    await page.getByRole('button', { name: '显示阅读工具' }).hover();
+    await expect(page.locator('.reader-toolbar')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(reader).not.toHaveClass(/is-fullscreen/);
+    await expect(page.locator('.reader-toolbar')).toBeVisible();
+
+    const nativeWindow = await app.browserWindow(page);
+    await nativeWindow.evaluate((window) => window.setFullScreen(true));
+    await expect(reader).toHaveClass(/is-fullscreen/);
+    await nativeWindow.evaluate((window) => window.setFullScreen(false));
+    await expect(reader).not.toHaveClass(/is-fullscreen/);
+  });
+
   test('the packaged executable imports EPUB with bundled ZIP and XML dependencies', async () => {
     const originalPath = path.join(testPath, 'packaged.epub');
     const userDataPath = path.join(testPath, 'packaged-epub-data');

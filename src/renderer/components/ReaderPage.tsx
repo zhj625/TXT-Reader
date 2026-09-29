@@ -24,11 +24,30 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   const [progress, setProgress] = useState(0);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [tocOpen, setTocOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const scrollElementRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<number | null>(null);
   const pendingOffsetRef = useRef(0);
   const pendingRestoreRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const syncFullScreen = (fullScreen: boolean) => {
+      if (!active) return;
+      setIsFullScreen(fullScreen);
+      setControlsVisible(false);
+    };
+    const unsubscribe = window.readerApi.onFullScreenChange(syncFullScreen);
+    void window.readerApi.getFullScreen().then(syncFullScreen).catch(() => {
+      onNotice('无法读取全屏状态');
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [onNotice]);
 
   const chunks = useMemo(() => createTextChunks(book?.content ?? ''), [book?.content]);
   const activeChapterIndex = useMemo(() => {
@@ -163,6 +182,13 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   }, []);
 
   const handleBack = async () => {
+    if (isFullScreen) {
+      try {
+        await window.readerApi.setFullScreen(false);
+      } catch {
+        onNotice('无法退出全屏');
+      }
+    }
     if (book) {
       try {
         await window.readerApi.saveProgress({ bookId: book.id, charOffset: getViewportOffset() });
@@ -193,6 +219,27 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
     setTocOpen(false);
   };
 
+  const handleFullScreen = async () => {
+    try {
+      const fullScreen = await window.readerApi.setFullScreen(!isFullScreen);
+      setIsFullScreen(fullScreen);
+      setControlsVisible(false);
+    } catch {
+      onNotice('无法切换全屏');
+    }
+  };
+
+  useEffect(() => {
+    if (!isFullScreen || tocOpen) return;
+    const exitOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        void window.readerApi.setFullScreen(false).catch(() => onNotice('无法退出全屏'));
+      }
+    };
+    window.addEventListener('keydown', exitOnEscape);
+    return () => window.removeEventListener('keydown', exitOnEscape);
+  }, [isFullScreen, tocOpen, onNotice]);
+
   useEffect(() => {
     if (!tocOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -212,8 +259,20 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
   }
 
   return (
-    <main className={`reader-page font-${fontSize}`} data-testid="reader-page">
-      <header className="reader-toolbar">
+    <main className={`reader-page font-${fontSize}${isFullScreen ? ' is-fullscreen' : ''}${controlsVisible ? ' controls-visible' : ''}`} data-testid="reader-page">
+      {isFullScreen ? (
+        <button
+          className="reader-toolbar-hotspot"
+          type="button"
+          aria-label="显示阅读工具"
+          onPointerEnter={() => setControlsVisible(true)}
+          onFocus={() => setControlsVisible(true)}
+          onClick={() => setControlsVisible(true)}
+        />
+      ) : null}
+      <header className="reader-toolbar" onPointerLeave={() => {
+        if (isFullScreen) setControlsVisible(false);
+      }}>
         <div className="reader-nav-controls">
           <button className="back-button" type="button" onClick={() => void handleBack()}>
             <span aria-hidden="true">←</span> 书架
@@ -228,19 +287,24 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
           <h1>{book.title}</h1>
           <span>{book.author ? `${book.author} · ` : ''}{progress.toFixed(progress < 1 ? 1 : 0)}%</span>
         </div>
-        <div className="font-controls" aria-label="字号">
-          {FONT_SIZE_LABELS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={fontSize === option.value ? 'active' : ''}
-              aria-label={option.label}
-              aria-pressed={fontSize === option.value}
-              onClick={() => void handleFontSize(option.value)}
-            >
-              {option.sample}
-            </button>
-          ))}
+        <div className="reader-display-controls">
+          <div className="font-controls" aria-label="字号">
+            {FONT_SIZE_LABELS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={fontSize === option.value ? 'active' : ''}
+                aria-label={option.label}
+                aria-pressed={fontSize === option.value}
+                onClick={() => void handleFontSize(option.value)}
+              >
+                {option.sample}
+              </button>
+            ))}
+          </div>
+          <button className="reader-fullscreen-button" type="button" onClick={() => void handleFullScreen()}>
+            {isFullScreen ? '退出全屏' : '沉浸阅读'}
+          </button>
         </div>
       </header>
 
@@ -288,27 +352,29 @@ export function ReaderPage({ bookId, onBack, onNotice }: ReaderPageProps) {
         onScroll={handleScroll}
         data-testid="reading-scroller"
       >
-        <article
-          className="reading-column"
-          style={{ height: `${virtualizer.getTotalSize()}px` }}
-          aria-label={`${book.title}正文`}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const chunk = chunks[virtualItem.index];
-            return (
-              <p
-                className="text-chunk"
-                data-index={virtualItem.index}
-                key={virtualItem.key}
-                ref={virtualizer.measureElement}
-                style={{ transform: `translateY(${virtualItem.start}px)` }}
-              >
-                {chunk.text}
-              </p>
-            );
-          })}
-        </article>
-        <div className="reader-end" aria-hidden="true">— 全文完 —</div>
+        <div className="reading-paper">
+          <article
+            className="reading-column"
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+            aria-label={`${book.title}正文`}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const chunk = chunks[virtualItem.index];
+              return (
+                <p
+                  className="text-chunk"
+                  data-index={virtualItem.index}
+                  key={virtualItem.key}
+                  ref={virtualizer.measureElement}
+                  style={{ transform: `translateY(${virtualItem.start}px)` }}
+                >
+                  {chunk.text}
+                </p>
+              );
+            })}
+          </article>
+          <div className="reader-end" aria-hidden="true">— 全文完 —</div>
+        </div>
       </div>
     </main>
   );

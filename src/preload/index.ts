@@ -3,6 +3,13 @@ import type { ReaderDesktopApi } from '../shared/contracts';
 import { IPC_CHANNELS } from '../shared/contracts';
 
 const readerApi = Object.freeze<ReaderDesktopApi>({
+  getFullScreen: () => ipcRenderer.invoke(IPC_CHANNELS.getFullScreen),
+  setFullScreen: (fullScreen: boolean) => ipcRenderer.invoke(IPC_CHANNELS.setFullScreen, fullScreen),
+  onFullScreenChange: (listener: (fullScreen: boolean) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, fullScreen: boolean) => listener(fullScreen);
+    ipcRenderer.on(IPC_CHANNELS.fullScreenChanged, handler);
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.fullScreenChanged, handler);
+  },
   getUpdateState: () => ipcRenderer.invoke(IPC_CHANNELS.getUpdateState),
   checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.checkForUpdates),
   listBooks: () => ipcRenderer.invoke(IPC_CHANNELS.listBooks),

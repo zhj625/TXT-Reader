@@ -1,4 +1,4 @@
-import type { IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
+import type { BrowserWindow, IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
 import type { FontSize, ReaderSettings, SaveProgressInput } from '../shared/contracts';
 import { IPC_CHANNELS } from '../shared/contracts';
 import { ReaderError, toReaderError } from '../shared/errors';
@@ -51,6 +51,7 @@ interface RegisterIpcOptions {
   importService: ImportService;
   updateService: UpdateService;
   getTrustedWebContents: () => WebContents | null;
+  getMainWindow: () => BrowserWindow | null;
 }
 
 export function registerIpcHandlers({
@@ -59,6 +60,7 @@ export function registerIpcHandlers({
   importService,
   updateService,
   getTrustedWebContents,
+  getMainWindow,
 }: RegisterIpcOptions): void {
   const assertTrustedSender = (event: IpcMainInvokeEvent) => {
     const trusted = getTrustedWebContents();
@@ -84,6 +86,14 @@ export function registerIpcHandlers({
     });
   };
 
+  handle(IPC_CHANNELS.getFullScreen, () => getMainWindow()?.isFullScreen() ?? false);
+  handle(IPC_CHANNELS.setFullScreen, (fullScreen: unknown) => {
+    if (typeof fullScreen !== 'boolean') throw new ReaderError('INVALID_INPUT');
+    const window = getMainWindow();
+    if (!window) throw new ReaderError('INVALID_INPUT');
+    window.setFullScreen(fullScreen);
+    return window.isFullScreen();
+  });
   handle(IPC_CHANNELS.getUpdateState, () => updateService.getState());
   handle(IPC_CHANNELS.checkForUpdates, () => updateService.check());
   handle(IPC_CHANNELS.listBooks, () => repository.listBooks());

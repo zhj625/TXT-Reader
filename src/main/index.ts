@@ -8,6 +8,7 @@ import { UpdateService } from './services/updateService';
 import { ImportService } from './services/importService';
 import { handleSquirrelStartup } from './squirrelStartup';
 import { LibraryRepository } from './storage/libraryRepository';
+import { IPC_CHANNELS } from '../shared/contracts';
 
 const squirrelStartupHandled = handleSquirrelStartup(squirrelStartup, () => app.quit());
 
@@ -66,6 +67,8 @@ function createMainWindow(): BrowserWindow {
   });
 
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  window.on('enter-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, true));
+  window.on('leave-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, false));
   window.webContents.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigation(targetUrl)) event.preventDefault();
   });
@@ -116,6 +119,7 @@ async function bootstrap(): Promise<void> {
     importService,
     updateService,
     getTrustedWebContents: () => mainWindow?.webContents ?? null,
+    getMainWindow: () => mainWindow,
   });
 }
 

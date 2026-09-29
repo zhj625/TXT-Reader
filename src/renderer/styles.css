@@ -449,10 +449,11 @@ button:focus-visible,
 }
 
 .reader-page {
+  position: relative;
   display: flex;
   height: 100%;
   flex-direction: column;
-  background: #f5f0e6;
+  background: #e8e3da;
 }
 
 .reader-toolbar {
@@ -464,6 +465,75 @@ button:focus-visible,
   grid-template-columns: 1fr minmax(220px, 2fr) 1fr;
   border-bottom: 1px solid rgba(80, 66, 50, 0.1);
   background: rgba(249, 246, 239, 0.97);
+}
+
+.reader-display-controls {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 10px;
+}
+
+.reader-fullscreen-button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(89, 75, 60, 0.16);
+  border-radius: 7px;
+  color: #6d5548;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.reader-fullscreen-button:hover {
+  background: #ede2d7;
+}
+
+.reader-toolbar-hotspot {
+  position: absolute;
+  z-index: 11;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.reader-page.is-fullscreen .reader-toolbar {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+.reader-page.is-fullscreen .reader-progress-line {
+  position: absolute;
+  z-index: 10;
+  top: 72px;
+  right: 0;
+  left: 0;
+}
+
+.reader-page.is-fullscreen .reader-toolbar,
+.reader-page.is-fullscreen .reader-progress-line {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+}
+
+.reader-page.is-fullscreen.controls-visible .reader-toolbar,
+.reader-page.is-fullscreen.controls-visible .reader-progress-line {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 .reader-nav-controls {
@@ -698,20 +768,19 @@ button:focus-visible,
   scrollbar-width: thin;
 }
 
-.reading-scroller::before {
-  position: fixed;
-  top: 74px;
-  right: 0;
-  left: 0;
-  height: 45px;
-  content: "";
-  pointer-events: none;
-  background: linear-gradient(#f5f0e6, rgba(245, 240, 230, 0));
+.reading-paper {
+  display: flow-root;
+  width: min(900px, calc(100% - 64px));
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(32px, 5vw, 80px) 1px;
+  background: #faf7f0;
+  box-shadow: 0 0 0 1px rgba(89, 75, 60, 0.07), 0 16px 48px rgba(67, 52, 38, 0.08);
 }
 
 .reading-column {
   position: relative;
-  width: min(740px, calc(100% - 92px));
+  width: 100%;
   margin: 58px auto 0;
 }
 
@@ -746,7 +815,7 @@ button:focus-visible,
 }
 
 .reader-end {
-  width: min(740px, calc(100% - 92px));
+  width: 100%;
   margin: 45px auto 80px;
   color: #a49c91;
   font-family: STSong, SimSun, serif;
@@ -800,7 +869,7 @@ button:focus-visible,
 
   .reader-toolbar {
     padding: 0 13px;
-    grid-template-columns: 92px minmax(120px, 1fr) 126px;
+    grid-template-columns: 92px minmax(120px, 1fr) auto;
   }
 
   .reader-nav-controls {
@@ -812,9 +881,18 @@ button:focus-visible,
     padding-left: 5px;
   }
 
-  .reading-column,
-  .reader-end {
-    width: calc(100% - 48px);
+  .reader-display-controls {
+    gap: 5px;
+  }
+
+  .reader-fullscreen-button {
+    padding: 0 7px;
+  }
+
+  .reading-paper {
+    width: calc(100% - 24px);
+    padding-right: 24px;
+    padding-left: 24px;
   }
 }
 
