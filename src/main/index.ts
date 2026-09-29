@@ -66,15 +66,37 @@ function createMainWindow(): BrowserWindow {
     },
   });
 
+  let suppressMaximizeUntilRestore = false;
+  let restoreTimer: ReturnType<typeof setTimeout> | null = null;
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.on('enter-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, true));
-  window.on('leave-full-screen', () => window.webContents.send(IPC_CHANNELS.fullScreenChanged, false));
-  window.on('maximize', () => window.webContents.send(IPC_CHANNELS.maximized));
+  window.on('leave-full-screen', () => {
+    // Windows restores the maximized state after leaving full screen. That maximize
+    // event is part of the exit transition, not a new request to enter full screen.
+    suppressMaximizeUntilRestore = true;
+    if (restoreTimer) clearTimeout(restoreTimer);
+    restoreTimer = setTimeout(() => {
+      suppressMaximizeUntilRestore = false;
+      restoreTimer = null;
+    }, 1000);
+    window.webContents.send(IPC_CHANNELS.fullScreenChanged, false);
+  });
+  window.on('unmaximize', () => {
+    suppressMaximizeUntilRestore = false;
+    if (restoreTimer) clearTimeout(restoreTimer);
+    restoreTimer = null;
+  });
+  window.on('maximize', () => {
+    if (!window.isFullScreen() && !suppressMaximizeUntilRestore) {
+      window.webContents.send(IPC_CHANNELS.maximized);
+    }
+  });
   window.webContents.on('will-navigate', (event, targetUrl) => {
     if (!isAllowedNavigation(targetUrl)) event.preventDefault();
   });
   window.once('ready-to-show', () => window.show());
   window.on('closed', () => {
+    if (restoreTimer) clearTimeout(restoreTimer);
     if (mainWindow === window) mainWindow = null;
   });
 

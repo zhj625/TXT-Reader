@@ -186,11 +186,20 @@ test.describe('TXT Reader desktop flow', () => {
     await expect(reader).toHaveClass(/is-fullscreen/);
     await nativeWindow.evaluate((window) => window.setFullScreen(false));
     await expect(reader).not.toHaveClass(/is-fullscreen/);
+    await page.waitForTimeout(1100);
     await nativeWindow.evaluate((window) => window.unmaximize());
     await nativeWindow.evaluate((window) => window.maximize());
     await expect(reader).toHaveClass(/is-fullscreen/);
+    await page.mouse.move(100, 200);
     await expect(page.locator('.reader-toolbar')).toBeHidden();
     expect(await nativeWindow.evaluate((window) => window.isFullScreen())).toBe(true);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    expect(await nativeWindow.evaluate((window) => window.isFullScreen())).toBe(false);
+    await expect(reader).not.toHaveClass(/is-fullscreen/);
+    await nativeWindow.evaluate((window) => window.unmaximize());
+    await nativeWindow.evaluate((window) => window.maximize());
+    await expect(reader).toHaveClass(/is-fullscreen/);
   });
 
   test('opens a book in immersive mode when the shelf window is already maximized', async () => {
@@ -203,6 +212,11 @@ test.describe('TXT Reader desktop flow', () => {
     await page.getByTestId('import-book').click();
     await expect(page.getByTestId('reader-page')).toHaveClass(/is-fullscreen/);
     await expect(page.locator('.reader-toolbar')).toBeHidden();
+    await page.getByRole('button', { name: '显示阅读工具' }).hover();
+    await page.getByRole('button', { name: '退出全屏' }).click();
+    await page.waitForTimeout(500);
+    expect(await nativeWindow.evaluate((window) => window.isFullScreen())).toBe(false);
+    await expect(page.getByTestId('reader-page')).not.toHaveClass(/is-fullscreen/);
   });
 
   test('the packaged executable imports EPUB with bundled ZIP and XML dependencies', async () => {
